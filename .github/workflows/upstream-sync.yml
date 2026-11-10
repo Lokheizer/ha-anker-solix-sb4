@@ -1,0 +1,177 @@
+name: Upstream Sync
+
+# Checks the official repository for new commits and opens a pull request
+# (upstream-sync -> main) in THIS repository. Nothing is ever sent upstream.
+#
+# Requirements:
+#   Settings -> Actions -> General -> Workflow permissions ->
+#   "Allow GitHub Actions to create and approve pull requests"
+# Optional:
+#   Secret UPSTREAM_SYNC_TOKEN (fine-grained PAT for this repo with
+#   contents/pull-requests/workflows write). Needed only when upstream changes
+#   files in .github/workflows (GITHUB_TOKEN may not push those). With a PAT,
+#   tests also start automatically on the PR.
+
+on:
+  schedule:
+    - cron: "17 4 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
+
+env:
+  UPSTREAM_URL: https://github.com/anker-charging/ha-anker-solix-official.git
+  UPSTREAM_BRANCH: main
+  SYNC_BRANCH: upstream-sync
+  BASE_BRANCH: main
+  MANIFEST: custom_components/anker_solix_official/manifest.json
+
+jobs:
+  sync:
+    name: Merge upstream into fork
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.BASE_BRANCH }}
+          fetch-depth: 0
+          token: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
+
+      - name: Fetch upstream
+        run: |
+          git remote add upstream "$UPSTREAM_URL"
+          git fetch --no-tags upstream "$UPSTREAM_BRANCH"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Check for new upstream commits
+        id: check
+        run: |
+          if git merge-base --is-ancestor "upstream/$UPSTREAM_BRANCH" HEAD; then
+            echo "Fork already contains upstream/$UPSTREAM_BRANCH - nothing to do."
+            echo "pending=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "pending=true" >> "$GITHUB_OUTPUT"
+          UPSTREAM_VERSION=$(git show "upstream/$UPSTREAM_BRANCH:$MANIFEST" | jq -r '.version')
+          echo "upstream_version=$UPSTREAM_VERSION" >> "$GITHUB_OUTPUT"
+          {
+            echo "commits<<EOF_COMMITS"
+            git log --no-merges --format='- %h %s (%an)' "HEAD..upstream/$UPSTREAM_BRANCH"
+            echo "EOF_COMMITS"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare sync branch
+        id: merge
+        if: steps.check.outputs.pending == 'true'
+        run: |
+          git checkout -B "$SYNC_BRANCH"
+          if git merge --no-edit "upstream/$UPSTREAM_BRANCH" \
+              -m "Merge upstream ${{ steps.check.outputs.upstream_version }} into fork"; then
+            echo "conflict=false" >> "$GITHUB_OUTPUT"
+          else
+            CONFLICTS=$(git diff --name-only --diff-filter=U)
+            echo "Conflicted files:"; echo "$CONFLICTS"
+            if [ "$CONFLICTS" = "$MANIFEST" ]; then
+              # Only the manifest conflicts (usually the version line): keep the
+              # upstream manifest and re-apply the fork fields automatically.
+              git show ":2:$MANIFEST" > "$RUNNER_TEMP/ours.json"
+              git show ":3:$MANIFEST" > "$RUNNER_TEMP/theirs.json"
+              python3 .github/scripts/resolve_manifest.py \
+                "$RUNNER_TEMP/ours.json" "$RUNNER_TEMP/theirs.json" "$MANIFEST"
+              git add "$MANIFEST"
+              git commit --no-edit
+              echo "Manifest conflict resolved automatically."
+              echo "conflict=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "Merge conflicts detected - pushing plain upstream state instead."
+              git merge --abort
+              git checkout -B "$SYNC_BRANCH" "upstream/$UPSTREAM_BRANCH"
+              echo "conflict=true" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Push sync branch
+        id: push
+        if: steps.check.outputs.pending == 'true'
+        run: |
+          if git push --force origin "$SYNC_BRANCH"; then
+            echo "pushed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::warning::Push failed (upstream probably changed workflow files; set secret UPSTREAM_SYNC_TOKEN)."
+            echo "pushed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Open or update pull request
+        if: steps.push.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
+          CONFLICT: ${{ steps.merge.outputs.conflict }}
+          UPSTREAM_VERSION: ${{ steps.check.outputs.upstream_version }}
+          COMMITS: ${{ steps.check.outputs.commits }}
+        run: |
+          if [ "$CONFLICT" = "true" ]; then
+            STATUS="⚠️ **Merge-Konflikte** – bitte lokal auflösen (siehe [FORK.md]($GITHUB_SERVER_URL/$GITHUB_REPOSITORY/blob/$BASE_BRANCH/FORK.md#typische-konflikte))."
+          else
+            STATUS="✅ Automatischer Merge ohne Konflikte."
+          fi
+          BODY=$(cat <<EOF
+          Neue Commits im offiziellen Repo ([anker-charging/ha-anker-solix-official](https://github.com/anker-charging/ha-anker-solix-official)).
+
+          **Upstream-Version:** \`$UPSTREAM_VERSION\`
+
+          $STATUS
+
+          Vor dem Merge prüfen:
+          - [ ] \`version\` in \`manifest.json\` ist die Fork-Version (ggf. anheben)
+          - [ ] Versionstabelle in \`FORK.md\` ergänzt
+          - [ ] Fork-Erweiterungen kompatibel, Tests grün
+
+          ### Commits
+          $COMMITS
+          EOF
+          )
+          PR=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$SYNC_BRANCH" --base "$BASE_BRANCH" \
+                 --state open --json number --jq '.[0].number')
+          TITLE="Upstream-Sync: offizielle Version $UPSTREAM_VERSION übernehmen"
+          if [ -n "$PR" ]; then
+            gh pr edit "$PR" --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body "$BODY"
+          else
+            gh pr create --repo "$GITHUB_REPOSITORY" --base "$BASE_BRANCH" --head "$SYNC_BRANCH" \
+              --title "$TITLE" --body "$BODY"
+          fi
+
+      - name: Run checks on sync branch
+        if: steps.push.outputs.pushed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Pushes made with GITHUB_TOKEN do not trigger workflows, workflow_dispatch does.
+          gh workflow run tests.yml --repo "$GITHUB_REPOSITORY" --ref "$SYNC_BRANCH"
+          gh workflow run hassfest.yaml --repo "$GITHUB_REPOSITORY" --ref "$SYNC_BRANCH"
+          gh workflow run hacs.yaml --repo "$GITHUB_REPOSITORY" --ref "$SYNC_BRANCH"
+
+      - name: Report failed push as issue
+        if: steps.check.outputs.pending == 'true' && steps.push.outputs.pushed != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_VERSION: ${{ steps.check.outputs.upstream_version }}
+        run: |
+          TITLE="Upstream-Sync fehlgeschlagen ($UPSTREAM_VERSION)"
+          EXISTING=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "in:title \"$TITLE\"" \
+                       --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "Issue #$EXISTING already open."
+            exit 0
+          fi
+          gh issue create --repo "$GITHUB_REPOSITORY" --title "$TITLE" --body \
+            "Der Branch \`$SYNC_BRANCH\` konnte nicht gepusht werden – vermutlich ändert Upstream Dateien unter \`.github/workflows\`, die \`GITHUB_TOKEN\` nicht schreiben darf. Lösung: Secret \`UPSTREAM_SYNC_TOKEN\` anlegen oder manuell mergen (siehe FORK.md). Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"

@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Have a question? We're happy to help! Please check the [README](https://github.com/anker-charging/ha-anker-solix-official#readme) and existing issues first.
+        Have a question? We're happy to help! Please check the [README](https://github.com/Lokheizer/ha-anker-solix-sb4#readme) and existing issues first.
 
   - type: dropdown
     id: topic

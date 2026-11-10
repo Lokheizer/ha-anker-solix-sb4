@@ -7,8 +7,8 @@ Leitfaden für Claude-Sitzungen in diesem Repository. Ausführliche Fork-Doku: [
 Inoffizieller Fork der offiziellen Home-Assistant-Integration
 [anker-charging/ha-anker-solix-official](https://github.com/anker-charging/ha-anker-solix-official)
 (lokales Modbus TCP) mit zusätzlichen Features, vor allem für die
-**Anker SOLIX Solarbank 4 E5000 Pro (SB4)**. Verteilung über HACS als
-benutzerdefiniertes Repository.
+**Anker SOLIX Solarbank 4 E5000 Pro (SB4)**. Verteilung über den HA-Marketplace
+(2026.11+) bzw. HACS als benutzerdefiniertes Repository.
 
 - Es werden **niemals PRs, Issues oder Kommentare im offiziellen Repo** erstellt.
   PRs immer mit Base `Lokheizer/ha-anker-solix-sb4:main`.

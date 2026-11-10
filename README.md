@@ -1,8 +1,14 @@
 # Anker Solix Official Integration for Home Assistant
 
-[![HACS Badge](https://img.shields.io/badge/HACS-Default-41BDF5.svg)](https://github.com/hacs/integration)
-[![GitHub Release](https://img.shields.io/github/release/anker-charging/ha-anker-solix-official.svg)](https://github.com/anker-charging/ha-anker-solix-official/releases)
-[![License](https://img.shields.io/github/license/anker-charging/ha-anker-solix-official.svg)](LICENSE)
+[![HACS Badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
+[![GitHub Release](https://img.shields.io/github/release/Lokheizer/ha-anker-solix-sb4.svg)](https://github.com/Lokheizer/ha-anker-solix-sb4/releases)
+[![License](https://img.shields.io/github/license/Lokheizer/ha-anker-solix-sb4.svg)](LICENSE)
+
+> [!IMPORTANT]
+> **Unofficial fork** of [anker-charging/ha-anker-solix-official](https://github.com/anker-charging/ha-anker-solix-official) with additional features.
+> Install it in HACS as a **custom repository** (`https://github.com/Lokheizer/ha-anker-solix-sb4`, category *Integration*).
+> It uses the same domain (`anker_solix_official`) — remove the official integration from HACS first; existing devices and entities are kept.
+> Fork-specific features, versioning and upstream sync: see [FORK.md](FORK.md).
 
 The **official** Home Assistant integration for [Anker Solix](https://www.ankersolix.com/eu) devices, developed and maintained by Anker Innovations.
 
@@ -88,7 +94,7 @@ Before setting up this integration, you must enable Modbus TCP on your device th
 
 ### Manual
 
-1. Download the [latest release](https://github.com/anker-charging/ha-anker-solix-official/releases)
+1. Download the [latest release](https://github.com/Lokheizer/ha-anker-solix-sb4/releases)
 2. Copy `custom_components/anker_solix_official/` into your Home Assistant `config/custom_components/` directory
 3. Restart Home Assistant
 
@@ -204,7 +210,7 @@ For more instructions on using Home Assistant and FAQs, please visit: https://an
 
 ## Contributing
 
-Contributions are welcome. Please open an [issue](https://github.com/anker-charging/ha-anker-solix-official/issues) to report bugs or suggest features, or submit a pull request.
+Contributions are welcome. Please open an [issue](https://github.com/Lokheizer/ha-anker-solix-sb4/issues) to report bugs or suggest features, or submit a pull request.
 
 ## License
 

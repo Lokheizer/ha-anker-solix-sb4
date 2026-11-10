@@ -6,8 +6,8 @@
 
 > [!IMPORTANT]
 > **Unofficial fork** of [anker-charging/ha-anker-solix-official](https://github.com/anker-charging/ha-anker-solix-official) with additional features.
-> Install it in HACS as a **custom repository** (`https://github.com/Lokheizer/ha-anker-solix-sb4`, category *Integration*).
-> It uses the same domain (`anker_solix_official`) — remove the official integration from HACS first; existing devices and entities are kept.
+> Install it via the Marketplace (HA 2026.11+, *Add from link*) or in HACS as a **custom repository** (`https://github.com/Lokheizer/ha-anker-solix-sb4`, category *Integration*).
+> It uses the same domain (`anker_solix_official`). Switching from the official integration on HA 2026.11+ requires re-adding the device under the **same name** so entity IDs and history are kept — see [FORK.md](FORK.md#installation).
 > Fork-specific features, versioning and upstream sync: see [FORK.md](FORK.md).
 
 The **official** Home Assistant integration for [Anker Solix](https://www.ankersolix.com/eu) devices, developed and maintained by Anker Innovations.

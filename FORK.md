@@ -12,7 +12,40 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 |---------|--------------|--------------|
 | _noch keine_ | – | – |
 
-## Installation über HACS
+## Installation
+
+Der Fork verwendet bewusst dieselbe Domain `anker_solix_official` wie das Original.
+Offizielle Version und Fork können deshalb **nicht parallel** installiert sein.
+
+### Home Assistant 2026.11+ (Marketplace)
+
+Beim Entfernen der offiziellen Version im Marketplace löscht Home Assistant auch den
+Konfigurationseintrag mit allen Geräten und Entitäten. **Verlauf und Langzeitstatistik
+bleiben in der Datenbank** und hängen an der `entity_id`. Wer das Gerät beim Neueinrichten
+exakt gleich benennt, bekommt dieselben `entity_id`s, und Verlauf und Statistik laufen
+weiter (nur mit einer Lücke für die Umstellzeit). Getestet in einer HA-2026.11.0-Testinstanz.
+
+1. **Vollbackup inkl. Datenbank** erstellen (*Einstellungen → System → Backups*).
+2. **Gerätenamen und `entity_id`s notieren** (*Einstellungen → Entitäten*, nach der
+   Integration filtern), vor allem selbst umbenannte; dazu Bereiche und Labels.
+3. Im Marketplace die offizielle Integration **„Anker SOLIX Official“ entfernen** und die
+   Abfrage zum Löschen von Geräten und Entitäten bestätigen.
+4. Marketplace → **Add from link** → `https://github.com/Lokheizer/ha-anker-solix-sb4`
+   (dafür muss im Marketplace ein GitHub-Konto verbunden sein), „Anker SOLIX Official
+   (SB4 Fork)“ installieren und Home Assistant neu starten.
+5. Integration unter *Einstellungen → Geräte & Dienste* neu einrichten und das
+   **Gerät exakt wie vorher benennen**.
+6. `entity_id`s mit der Liste aus Schritt 2 vergleichen; abweichende auf die alte ID
+   umbenennen. Bereiche, Labels und Anzeigenamen neu setzen.
+
+Hinweise:
+- Solange die Entitäten fehlen, unter *Statistik* (Entwickler-/Tools-Ansicht) **keine**
+  „Löschen“-Reparatur für sie ausführen – das würde die Langzeitstatistik wirklich löschen.
+- Der kurzfristige Verlauf wird nach `purge_keep_days` (Standard 10 Tage) ohnehin bereinigt;
+  den Umstieg also zügig abschließen.
+- Zurück zum Original: derselbe Ablauf in umgekehrter Richtung.
+
+### Home Assistant bis 2026.10 (HACS)
 
 1. Falls installiert: die offizielle Integration **„Anker SOLIX Official“ in HACS entfernen**
    (nur den HACS-Download, **nicht** die Integration unter *Geräte & Dienste* löschen).
@@ -21,11 +54,8 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
    - Typ: **Integration**
 3. „Anker SOLIX Official (SB4 Fork)“ herunterladen und Home Assistant neu starten.
 
-Der Fork verwendet bewusst dieselbe Domain `anker_solix_official` wie das Original.
-Dadurch bleiben bestehende Config-Entries, Geräte, Entitäten und deren Historie
-beim Wechsel erhalten. Offizielle Version und Fork können deshalb **nicht parallel**
-installiert sein. Zurück zum Original: Fork in HACS entfernen, offizielle Version
-wieder herunterladen.
+Hier bleiben Konfigurationseintrag, Geräte und Entitäten erhalten.
+Zurück zum Original: Fork in HACS entfernen, offizielle Version wieder herunterladen.
 
 ## Versionen
 

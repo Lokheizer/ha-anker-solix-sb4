@@ -73,6 +73,14 @@ git diff --name-only --diff-filter=ACMR origin/main -- '*.py' | xargs -r .venv/b
   Verifikation am Gerät macht der User in seiner HA-Testinstanz; dafür ggf. um
   Diagnosedaten/Logs bitten.
 
+## Test-Builds für die HA-Testinstanz
+
+- Der User testet neue Features über **lokale ZIPs**, nicht über Releases.
+- Nach Commit/Push des Feature-Branches: `scripts/build_test_zip.sh` ausführen und die
+  ausgegebene ZIP-Datei (`dist/…zip`) mit `SendUserFile` an den User schicken.
+  Installationsschritte stehen in `FORK.md` („Testen in der HA-Testinstanz“).
+- Das Skript ändert das Repo nicht; `dist/` ist in `.gitignore`.
+
 ## Versionen & Releases
 
 - Eigenes SemVer-Schema, unabhängig von Upstream (Start `0.1.0`):

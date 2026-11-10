@@ -57,6 +57,28 @@ Hinweise:
 Hier bleiben Konfigurationseintrag, Geräte und Entitäten erhalten.
 Zurück zum Original: Fork in HACS entfernen, offizielle Version wieder herunterladen.
 
+## Testen in der HA-Testinstanz (lokale ZIPs)
+
+Neue Features werden vor einem Release als **Test-ZIP** manuell installiert –
+ohne Release und ohne Marketplace.
+
+1. Test-ZIP bauen (macht Claude in der Sitzung und schickt die Datei):
+   ```bash
+   scripts/build_test_zip.sh
+   ```
+   Ergebnis: `dist/anker_solix_official-<version>-dev-<commit>.zip`. Die Version im
+   ZIP (z.B. `0.1.0-dev-1a2b3c4`) zeigt in HA, welcher Stand installiert ist;
+   `-dirty` bedeutet: enthält noch nicht committete Änderungen.
+2. In der Testinstanz den **Inhalt** von `/config/custom_components/anker_solix_official/`
+   löschen (damit keine im Branch entfernten Dateien liegen bleiben), dann das ZIP nach
+   `/config/custom_components/` entpacken (File-Editor-App, Samba oder SSH).
+3. Home Assistant neu starten. Kontrolle: *Einstellungen → Geräte & Dienste →
+   Anker SOLIX Official → Info*, Version `…-dev-<commit>`.
+
+Konfigurationseintrag, Geräte und Entitäten bleiben dabei unverändert.
+Zurück auf einen offiziellen Stand: die gewünschte Version im Marketplace bzw. in HACS
+erneut herunterladen (überschreibt den Ordner) und neu starten.
+
 ## Versionen
 
 Der Fork hat ein eigenes, vom Upstream unabhängiges Versionsschema (SemVer):

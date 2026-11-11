@@ -10,7 +10,7 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 
 | Feature | Seit Version | Beschreibung |
 |---------|--------------|--------------|
-| _noch keine_ | – | – |
+| SB4: Sensoren „Verfügbare Ladeleistung“ / „Verfügbare Entladeleistung“ | 0.2.0 | Die bereits gelesenen Register 10036 (Rechargeable Power) und 10038 (Dischargeable Power) stehen bei der Solarbank 4 E5000 Pro als Sensoren (`max_charge_power`, `max_discharge_power`) zur Verfügung. |
 
 ## Installation
 

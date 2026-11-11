@@ -132,6 +132,12 @@
           "fault": "Défaut"
         }
       },
+      "max_charge_power": {
+        "name": "Puissance de charge disponible"
+      },
+      "max_discharge_power": {
+        "name": "Puissance de décharge disponible"
+      },
       "battery_status": {
         "name": "Statut du périphérique",
         "state": {

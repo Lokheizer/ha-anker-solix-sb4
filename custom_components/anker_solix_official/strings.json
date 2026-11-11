@@ -106,6 +106,12 @@
           "fault": "Fault"
         }
       },
+      "max_charge_power": {
+        "name": "Available Charge Power"
+      },
+      "max_discharge_power": {
+        "name": "Available Discharge Power"
+      },
       "battery_status": {
         "name": "Device Status",
         "state": {

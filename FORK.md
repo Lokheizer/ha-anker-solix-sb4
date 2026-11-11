@@ -10,6 +10,7 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 
 | Feature | Seit Version | Beschreibung |
 |---------|--------------|--------------|
+| SB4: Sensoren „Verfügbare Ladeleistung“ / „Verfügbare Entladeleistung“ | 0.2.0 | Die bereits gelesenen Register 10036 (Rechargeable Power) und 10038 (Dischargeable Power) stehen bei der Solarbank 4 E5000 Pro als Sensoren (`max_charge_power`, `max_discharge_power`) zur Verfügung. |
 | MPPT-Leistungen PV1–PV4 (SB4 E5000 Pro) | 0.2.0 | Vier Sensoren „PV1…PV4-Leistung“ in W. PV1–3 = Spannung × Strom (Register 10167–10172). PV4 hat auf der SB4 keine eigenen Register und wird berechnet: Solarleistung (Register 10002) − PV1 − PV2 − PV3. |
 
 ### MPPT-Leistungen PV1–PV4

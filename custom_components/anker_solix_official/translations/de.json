@@ -144,6 +144,12 @@
           "fault": "Fehler"
         }
       },
+      "max_charge_power": {
+        "name": "Verfügbare Ladeleistung"
+      },
+      "max_discharge_power": {
+        "name": "Verfügbare Entladeleistung"
+      },
       "battery_status": {
         "name": "Gerätestatus",
         "state": {

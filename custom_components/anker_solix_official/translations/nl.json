@@ -144,6 +144,12 @@
           "fault": "Storing"
         }
       },
+      "max_charge_power": {
+        "name": "Beschikbaar laadvermogen"
+      },
+      "max_discharge_power": {
+        "name": "Beschikbaar ontlaadvermogen"
+      },
       "battery_status": {
         "name": "Apparaatstatus",
         "state": {

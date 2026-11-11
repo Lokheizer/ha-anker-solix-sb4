@@ -124,6 +124,12 @@
       "max_discharge_power": {
         "name": "Available Discharge Power"
       },
+      "total_battery_charge_energy": {
+        "name": "Total Battery Charge Energy"
+      },
+      "total_battery_discharge_energy": {
+        "name": "Total Battery Discharge Energy"
+      },
       "battery_status": {
         "name": "Device Status",
         "state": {

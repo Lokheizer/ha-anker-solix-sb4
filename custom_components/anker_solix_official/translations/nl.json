@@ -150,6 +150,12 @@
       "max_discharge_power": {
         "name": "Beschikbaar ontlaadvermogen"
       },
+      "total_battery_charge_energy": {
+        "name": "Totale batterij-laadenergie"
+      },
+      "total_battery_discharge_energy": {
+        "name": "Totale batterij-ontlaadenergie"
+      },
       "battery_status": {
         "name": "Apparaatstatus",
         "state": {

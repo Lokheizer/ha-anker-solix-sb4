@@ -304,6 +304,34 @@ read_quantities:
     count: 2
     icon: "mdi:battery-arrow-down-outline"
 
+  # Fork: plant summary data points (Anker SOLIX Modbus Protocol V1.0.0)
+  power_station_status:
+    translation_key: "power_station_status"
+    address: 10000
+    data_type: "UINT16"
+    unit: "/"
+    gain: 1
+    count: 1
+    icon: "mdi:transmission-tower"
+    value_mapping:
+      0: "unknown"
+      1: "grid_tied"
+      2: "off_grid"
+      3: "standby"
+      4: "fault"
+
+  # SOH is a percentage but not a charge level: drop the unit-inferred
+  # "battery" device class.
+  battery_soh:
+    translation_key: "battery_soh"
+    address: 10015
+    data_type: "UINT16"
+    unit: "%"
+    gain: 1
+    count: 1
+    icon: "mdi:battery-heart-variant"
+    device_class: "none"
+
   ems_mode_mask:
     translation_key: "ems_mode_mask"
     address: 32774

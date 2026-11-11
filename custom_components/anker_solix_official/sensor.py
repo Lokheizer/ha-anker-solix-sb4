@@ -162,7 +162,14 @@ class ModbusLocalDeviceSensor(AnkerSolixBaseEntity, SensorEntity):
             self._attr_state_class = SensorStateClass.MEASUREMENT
 
         # Classes declared in the device YAML take precedence over unit inference
-        if declared_device_class := self._parse_declared_class(
+        # Fork: an explicit "none" (or YAML null) removes the unit-inferred device
+        # class, e.g. for a percentage that is not a battery charge level.
+        if "device_class" in config and (
+            config["device_class"] is None
+            or str(config["device_class"]).lower() == "none"
+        ):
+            self._attr_device_class = None
+        elif declared_device_class := self._parse_declared_class(
             SensorDeviceClass, config.get("device_class")
         ):
             self._attr_device_class = declared_device_class

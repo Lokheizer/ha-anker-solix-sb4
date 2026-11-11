@@ -117,3 +117,89 @@ def test_setpoint_still_uses_available_power_limits() -> None:
     setpoint = data_points["battery_power_setpoint"]
     assert setpoint["max_charge_power_entity"] == "max_charge_power"
     assert setpoint["max_discharge_power_entity"] == "max_discharge_power"
+
+
+# key -> (address, data_type, unit, gain, count), per Anker SOLIX Modbus
+# Protocol V1.0.0, "Summary - Information".
+PLANT_SUMMARY_SENSORS = {
+    "power_station_status": (10000, "UINT16", "/", 1, 1),
+    "battery_soh": (10015, "UINT16", "%", 1, 1),
+}
+
+
+def _lang_files() -> list[Path]:
+    base = SB4_CONFIG_PATH.parents[1]
+    return [base / "strings.json", *sorted((base / "translations").glob("*.json"))]
+
+
+def _make_entity(key: str, value: Any) -> ModbusLocalDeviceSensor:
+    data_points, _ = _load_sb4_config()
+    coordinator = _FakeCoordinator()
+    coordinator.data[key] = value
+    return ModbusLocalDeviceSensor(coordinator, key, data_points[key])
+
+
+@pytest.mark.parametrize("key", sorted(PLANT_SUMMARY_SENSORS))
+class TestPlantSummarySensors:
+    def test_matches_protocol_sheet(self, key: str) -> None:
+        data_points, _ = _load_sb4_config()
+        dp = data_points[key]
+        actual = (dp["address"], dp["data_type"], dp["unit"], dp["gain"], dp["count"])
+        assert actual == PLANT_SUMMARY_SENSORS[key]
+
+    def test_is_exposed_as_sensor(self, key: str) -> None:
+        data_points, _ = _load_sb4_config()
+        assert _is_sensor_entity(key, data_points[key])
+
+    def test_sits_inside_a_batch_range(self, key: str) -> None:
+        data_points, batch_ranges = _load_sb4_config()
+        dp = data_points[key]
+        last = dp["address"] + dp["count"] - 1
+        assert any(
+            start <= dp["address"] and last <= end for start, end, _ in batch_ranges
+        )
+
+    def test_translation_exists_in_all_languages(self, key: str) -> None:
+        for lang_file in _lang_files():
+            sensors = json.loads(lang_file.read_text(encoding="utf-8"))["entity"][
+                "sensor"
+            ]
+            assert sensors.get(key, {}).get("name"), lang_file.name
+
+
+def test_plant_status_is_an_enum_with_translated_states() -> None:
+    data_points, _ = _load_sb4_config()
+    mapping = data_points["power_station_status"]["value_mapping"]
+    assert mapping == {
+        0: "unknown",
+        1: "grid_tied",
+        2: "off_grid",
+        3: "standby",
+        4: "fault",
+    }
+    entity = _make_entity("power_station_status", 1)
+    assert entity.device_class == SensorDeviceClass.ENUM
+    assert entity.native_value == "grid_tied"
+    for lang_file in _lang_files():
+        states = json.loads(lang_file.read_text(encoding="utf-8"))["entity"]["sensor"][
+            "power_station_status"
+        ]["state"]
+        assert set(mapping.values()) <= set(states), lang_file.name
+
+
+def test_soh_is_a_plain_percentage_not_a_battery_level() -> None:
+    entity = _make_entity("battery_soh", 98)
+    assert entity.device_class is None
+    assert entity.state_class == SensorStateClass.MEASUREMENT
+    assert entity.native_unit_of_measurement == "%"
+    assert entity.native_value == 98
+
+
+@pytest.mark.parametrize(
+    "key", ["total_battery_charge_energy", "total_battery_discharge_energy"]
+)
+def test_redundant_battery_energy_totals_are_not_defined(key: str) -> None:
+    """10022/10024 mirror 10262/10264 on the SB4 (verified on the device)."""
+    data_points, _ = _load_sb4_config()
+    assert key not in data_points
+    assert {10022, 10024}.isdisjoint(dp.get("address") for dp in data_points.values())

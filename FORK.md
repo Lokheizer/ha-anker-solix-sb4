@@ -27,6 +27,18 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 - Technik: Abschnitt `derived_quantities` in der Geräte-YAML, ausgewertet von
   `derived_sensor.py` (Operationen `product` und `difference`).
 
+### SB4: geprüfte, nicht übernommene Register
+
+Diese Register aus der Anker-Modbus-Doku V1.0.0 („Summary – Information“) wurden an einer
+Solarbank 4 E5000 Pro geprüft (Gerätetest November 2026) und bewusst **nicht** als Sensoren
+übernommen:
+
+| Register | Doku-Name | Befund am Gerät |
+|----------|-----------|-----------------|
+| 10006 | Active Power | Identisch mit dem vorhandenen Sensor `ac_grid_output_power` (Register 10208). |
+| 10022 / 10024 | Total Battery Charge / Discharge Energy | Identisch mit den vorhandenen Zählern aus 10262 / 10264. |
+| 10040 / 10041 | Number of PCS / Number of Available PCS | Liefern 257 (`0x0101`) und 4865 (`0x1301`), offenbar byteweise gepackte Werte unklarer Bedeutung. Passt nicht zur Doku; die SB4 ist dort nicht als unterstütztes Gerät gelistet. |
+
 ## Installation
 
 Der Fork verwendet bewusst dieselbe Domain `anker_solix_official` wie das Original.

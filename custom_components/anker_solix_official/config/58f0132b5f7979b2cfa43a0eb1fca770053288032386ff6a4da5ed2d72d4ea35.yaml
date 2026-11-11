@@ -226,7 +226,6 @@ read_quantities:
     gain: 1
     count: 2
     icon: "mdi:battery-charging-high"
-    internal: true
 
   max_discharge_power:
     translation_key: "max_discharge_power"
@@ -236,7 +235,6 @@ read_quantities:
     gain: 1
     count: 2
     icon: "mdi:battery-arrow-down-outline"
-    internal: true
 
   ems_mode_mask:
     translation_key: "ems_mode_mask"

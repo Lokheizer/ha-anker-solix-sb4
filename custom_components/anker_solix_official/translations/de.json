@@ -150,12 +150,6 @@
       "max_discharge_power": {
         "name": "Verfügbare Entladeleistung"
       },
-      "total_battery_charge_energy": {
-        "name": "Gesamte Batterie-Ladeenergie"
-      },
-      "total_battery_discharge_energy": {
-        "name": "Gesamte Batterie-Entladeenergie"
-      },
       "battery_status": {
         "name": "Gerätestatus",
         "state": {

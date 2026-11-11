@@ -332,24 +332,6 @@ read_quantities:
     icon: "mdi:battery-heart-variant"
     device_class: "none"
 
-  total_battery_charge_energy:
-    translation_key: "total_battery_charge_energy"
-    address: 10022
-    data_type: "UINT32"
-    unit: "kWh"
-    gain: 10
-    count: 2
-    icon: "mdi:battery-plus-outline"
-
-  total_battery_discharge_energy:
-    translation_key: "total_battery_discharge_energy"
-    address: 10024
-    data_type: "UINT32"
-    unit: "kWh"
-    gain: 10
-    count: 2
-    icon: "mdi:battery-minus-outline"
-
   ems_mode_mask:
     translation_key: "ems_mode_mask"
     address: 32774

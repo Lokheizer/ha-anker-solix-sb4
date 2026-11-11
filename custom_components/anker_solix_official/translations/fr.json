@@ -150,12 +150,6 @@
       "max_discharge_power": {
         "name": "Puissance de décharge disponible"
       },
-      "total_battery_charge_energy": {
-        "name": "Énergie totale de charge de la batterie"
-      },
-      "total_battery_discharge_energy": {
-        "name": "Énergie totale de décharge de la batterie"
-      },
       "battery_status": {
         "name": "Statut du périphérique",
         "state": {

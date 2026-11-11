@@ -124,8 +124,6 @@ def test_setpoint_still_uses_available_power_limits() -> None:
 PLANT_SUMMARY_SENSORS = {
     "power_station_status": (10000, "UINT16", "/", 1, 1),
     "battery_soh": (10015, "UINT16", "%", 1, 1),
-    "total_battery_charge_energy": (10022, "UINT32", "kWh", 10, 2),
-    "total_battery_discharge_energy": (10024, "UINT32", "kWh", 10, 2),
 }
 
 
@@ -200,10 +198,8 @@ def test_soh_is_a_plain_percentage_not_a_battery_level() -> None:
 @pytest.mark.parametrize(
     "key", ["total_battery_charge_energy", "total_battery_discharge_energy"]
 )
-def test_battery_energy_totals_are_energy_counters(key: str) -> None:
-    entity = _make_entity(key, 123.4)
-    assert entity.device_class == SensorDeviceClass.ENERGY
-    assert entity.state_class == SensorStateClass.TOTAL_INCREASING
-    assert entity.native_unit_of_measurement == "kWh"
-    assert entity.suggested_display_precision == 1
-    assert entity.native_value == 123.4
+def test_redundant_battery_energy_totals_are_not_defined(key: str) -> None:
+    """10022/10024 mirror 10262/10264 on the SB4 (verified on the device)."""
+    data_points, _ = _load_sb4_config()
+    assert key not in data_points
+    assert {10022, 10024}.isdisjoint(dp.get("address") for dp in data_points.values())

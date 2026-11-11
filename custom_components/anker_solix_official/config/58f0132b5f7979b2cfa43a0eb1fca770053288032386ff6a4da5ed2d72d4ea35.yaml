@@ -23,6 +23,10 @@ batch_read_ranges:
   input:
     - 10000-10050
     - 10090-10156
+    # Fork: PV1-3 voltage/current (closed 6-register block). Ends at 10172 on
+    # purpose: 10173/10174 (PV4) are not implemented on this device, a batch
+    # that spans them only gets silent zeros appended by the firmware.
+    - 10167-10172
     - 10208-10265
     # Stops at 32774: 0x8007 (parallel_capability_mask) is read on its own
     # instead. A batch that spans it gets a silent zero appended by firmware
@@ -99,6 +103,70 @@ read_quantities:
     gain: 1
     count: 2
     icon: "mdi:solar-power-variant"
+    internal: true
+
+  # Fork: MPPT input voltage/current of PV1-3 (internal, not displayed directly).
+  # They feed the calculated pvN_power sensors in derived_quantities below.
+  # Signed on purpose: at night the device reports small negative ADC offsets.
+  # PV4 has no registers on this device (10173/10174 are not implemented).
+  pv1_voltage:
+    translation_key: "pv1_voltage"
+    address: 10167
+    data_type: "INT16"
+    unit: "V"
+    gain: 10
+    count: 1
+    icon: "mdi:solar-panel"
+    internal: true
+
+  pv1_current:
+    translation_key: "pv1_current"
+    address: 10168
+    data_type: "INT16"
+    unit: "A"
+    gain: 100
+    count: 1
+    icon: "mdi:solar-panel"
+    internal: true
+
+  pv2_voltage:
+    translation_key: "pv2_voltage"
+    address: 10169
+    data_type: "INT16"
+    unit: "V"
+    gain: 10
+    count: 1
+    icon: "mdi:solar-panel"
+    internal: true
+
+  pv2_current:
+    translation_key: "pv2_current"
+    address: 10170
+    data_type: "INT16"
+    unit: "A"
+    gain: 100
+    count: 1
+    icon: "mdi:solar-panel"
+    internal: true
+
+  pv3_voltage:
+    translation_key: "pv3_voltage"
+    address: 10171
+    data_type: "INT16"
+    unit: "V"
+    gain: 10
+    count: 1
+    icon: "mdi:solar-panel"
+    internal: true
+
+  pv3_current:
+    translation_key: "pv3_current"
+    address: 10172
+    data_type: "INT16"
+    unit: "A"
+    gain: 100
+    count: 1
+    icon: "mdi:solar-panel"
     internal: true
 
   # Battery charging power - shows charging power (negative values from register become positive)
@@ -436,6 +504,72 @@ control_items:
       operator: "eq"
       value: 1
       hint: "enable_backup_soc_first"
+
+# =======================================================================
+# Derived Quantities (fork feature, see derived_sensor.py)
+# =======================================================================
+# Sensors calculated from other data points instead of being read via Modbus.
+# - operation "product":    all sources multiplied
+# - operation "difference": first source minus all following sources
+# - sources: data point keys from this file or derived quantities defined above
+# - min_value: lower clamp, precision: number of decimals (0 = whole numbers)
+derived_quantities:
+  # MPPT input power PV1-3 = voltage x current
+  pv1_power:
+    translation_key: "pv1_power"
+    unit: "W"
+    device_class: "power"
+    state_class: "measurement"
+    icon: "mdi:solar-panel"
+    operation: "product"
+    sources:
+      - "pv1_voltage"
+      - "pv1_current"
+    min_value: 0
+    precision: 0
+
+  pv2_power:
+    translation_key: "pv2_power"
+    unit: "W"
+    device_class: "power"
+    state_class: "measurement"
+    icon: "mdi:solar-panel"
+    operation: "product"
+    sources:
+      - "pv2_voltage"
+      - "pv2_current"
+    min_value: 0
+    precision: 0
+
+  pv3_power:
+    translation_key: "pv3_power"
+    unit: "W"
+    device_class: "power"
+    state_class: "measurement"
+    icon: "mdi:solar-panel"
+    operation: "product"
+    sources:
+      - "pv3_voltage"
+      - "pv3_current"
+    min_value: 0
+    precision: 0
+
+  # PV4 has no voltage/current registers on this device. It is the remainder of
+  # the PCS PV power (10002, without third-party PV) after PV1-3.
+  pv4_power:
+    translation_key: "pv4_power"
+    unit: "W"
+    device_class: "power"
+    state_class: "measurement"
+    icon: "mdi:solar-panel"
+    operation: "difference"
+    sources:
+      - "pv_power"
+      - "pv1_power"
+      - "pv2_power"
+      - "pv3_power"
+    min_value: 0
+    precision: 0
 
 # =============================================================================
 # Configuration Instructions

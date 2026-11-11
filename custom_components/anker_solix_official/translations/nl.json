@@ -86,6 +86,18 @@
       "pv_power": {
         "name": "Zonne-energie"
       },
+      "pv1_power": {
+        "name": "PV1-vermogen"
+      },
+      "pv2_power": {
+        "name": "PV2-vermogen"
+      },
+      "pv3_power": {
+        "name": "PV3-vermogen"
+      },
+      "pv4_power": {
+        "name": "PV4-vermogen"
+      },
       "battery_charging_power": {
         "name": "Laadvermogen van de batterij"
       },

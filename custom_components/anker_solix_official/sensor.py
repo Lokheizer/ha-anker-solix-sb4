@@ -27,6 +27,7 @@ from homeassistant.helpers.typing import StateType
 from .base_entity import AnkerSolixBaseEntity, async_setup_entities_with_retry
 from .const import DOMAIN
 from .coordinator import AnkerSolixOfficialCoordinator
+from .derived_sensor import create_derived_sensors
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -62,6 +63,10 @@ async def async_setup_entry(
         entity_factory=lambda c, k, cfg: ModbusLocalDeviceSensor(c, k, cfg),
         platform_name="sensor",
     )
+
+    # Fork: calculated sensors (derived_quantities), see derived_sensor.py
+    if derived_sensors := create_derived_sensors(coordinator):
+        async_add_entities(derived_sensors)
 
 
 class ModbusLocalDeviceSensor(AnkerSolixBaseEntity, SensorEntity):

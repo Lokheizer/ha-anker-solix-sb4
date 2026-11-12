@@ -123,7 +123,8 @@ Der Fork hat ein eigenes, vom Upstream unabhängiges Versionsschema (SemVer):
 1. `version` in `custom_components/anker_solix_official/manifest.json` anheben
    und obige Tabelle ergänzen.
 2. Commit auf `main` pushen.
-3. GitHub → Releases → *Draft a new release*, Tag `vX.Y.Z` (z.B. `v0.1.0`), veröffentlichen.
+3. GitHub → Releases → *Draft a new release*, Tag `X.Y.Z` **ohne „v“** (z.B. `0.3.0`),
+   veröffentlichen. (`v0.1.0` und `v0.2.0` stammen noch aus dem alten Schema.)
 4. Der Workflow `release.yml` baut `anker_solix_official.zip` und hängt es an das
    Release an – HACS installiert dieses ZIP.
 

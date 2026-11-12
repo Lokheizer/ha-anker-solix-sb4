@@ -87,5 +87,5 @@ git diff --name-only --diff-filter=ACMR origin/main -- '*.py' | xargs -r .venv/b
   Minor = neue Features / Upstream-Übernahme, Patch = Fixes.
 - Bei einem Release: `version` in `manifest.json` anheben und Versionstabelle
   (Fork-Version ↔ Upstream-Basis) in `FORK.md` ergänzen.
-- Das GitHub-Release (Tag `vX.Y.Z`, kein Pre-Release) erstellt der User;
+- Das GitHub-Release (Tag `X.Y.Z` ohne „v“, kein Pre-Release) erstellt der User;
   `release.yml` hängt anschließend `anker_solix_official.zip` an.

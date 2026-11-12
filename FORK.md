@@ -116,6 +116,7 @@ Der Fork hat ein eigenes, vom Upstream unabhängiges Versionsschema (SemVer):
 | Fork-Version | Upstream-Basis | Bemerkung |
 |--------------|----------------|-----------|
 | 0.1.0 | 1.5.1 | Initialer Fork |
+| 0.2.0 | 1.5.1 | SB4: Sensoren verfügbare Lade-/Entladeleistung, Kraftwerksstatus, Batteriegesundheit (SOH), MPPT-Leistungen PV1–PV4 |
 
 ### Release erstellen
 

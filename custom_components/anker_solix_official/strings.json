@@ -90,6 +90,15 @@
       "ac_grid_output_power": {
         "name": "AC Output"
       },
+      "grid_voltage": {
+        "name": "Grid Voltage"
+      },
+      "grid_current": {
+        "name": "Grid Current"
+      },
+      "grid_frequency": {
+        "name": "Grid Frequency"
+      },
       "pv_total_generation": {
         "name": "Total Solar Generation"
       },

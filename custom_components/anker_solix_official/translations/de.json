@@ -119,6 +119,15 @@
       "ac_grid_output_power": {
         "name": "AC-Ausgang"
       },
+      "grid_voltage": {
+        "name": "Netzspannung"
+      },
+      "grid_current": {
+        "name": "Netzstrom"
+      },
+      "grid_frequency": {
+        "name": "Netzfrequenz"
+      },
       "pv_total_generation": {
         "name": "Gesamte Solarstromerzeugung"
       },

@@ -119,6 +119,15 @@
       "ac_grid_output_power": {
         "name": "AC-uitvoer"
       },
+      "grid_voltage": {
+        "name": "Netspanning"
+      },
+      "grid_current": {
+        "name": "Netstroom"
+      },
+      "grid_frequency": {
+        "name": "Netfrequentie"
+      },
       "pv_total_generation": {
         "name": "Totaal geproduceerde zonne-energie"
       },

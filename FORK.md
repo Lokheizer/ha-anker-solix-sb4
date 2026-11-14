@@ -14,6 +14,7 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 | SB4: Sensoren „Kraftwerksstatus“ und „Batteriegesundheit“ (SOH) | 0.2.0 | Zusätzliche Datenpunkte der Anlagen-Übersicht für die Solarbank 4 E5000 Pro: Register 10000 (Plant Status, `power_station_status`) und 10015 (SOH, `battery_soh`). Dafür kann eine Geräte-Config mit `device_class: none` die aus der Einheit abgeleitete Geräteklasse entfernen. Die Register 10022 / 10024 (Total Battery Charge / Discharge Energy) liefern auf der SB4 dieselben Werte wie die vorhandenen Zähler aus 10262 / 10264 und werden deshalb nicht zusätzlich angeboten. |
 | MPPT-Leistungen PV1–PV4 (SB4 E5000 Pro) | 0.2.0 | Vier Sensoren „PV1…PV4-Leistung“ in W. PV1–3 = Spannung × Strom (Register 10167–10172). PV4 hat auf der SB4 keine eigenen Register und wird berechnet: Solarleistung (Register 10002) − PV1 − PV2 − PV3. |
 | SB4: Exportbegrenzung | 0.3.0 | Auswahl „Exportbegrenzung“ (Unbegrenzt / Anpassen / Null-Export, wie in der Anker-App) und Zahlenwert „Exportlimit“ (100–10000 W) für die Solarbank 4 E5000 Pro, über die Register 10074 und 10075/10076. |
+| SB4: Netzspannung, Netzstrom, Netzfrequenz | 0.3.0 | Drei Sensoren für den Netzanschluss der Solarbank 4 E5000 Pro: „Netzspannung“ (Register 10199, V), „Netzstrom“ (Register 10205, A, vorzeichenbehaftet) und „Netzfrequenz“ (Register 10213, Hz). |
 
 ### Exportbegrenzung
 

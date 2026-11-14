@@ -27,6 +27,11 @@ batch_read_ranges:
     # purpose: 10173/10174 (PV4) are not implemented on this device, a batch
     # that spans them only gets silent zeros appended by the firmware.
     - 10167-10172
+    # Fork: grid voltage (10199) and grid current (10205). Kept apart from the
+    # 10208 block on purpose, so a firmware that rejects this range cannot take
+    # the sensors from 10208 on with it. 10200-10204 are read along but have no
+    # data points.
+    - 10199-10205
     - 10208-10265
     # Stops at 32774: 0x8007 (parallel_capability_mask) is read on its own
     # instead. A batch that spans it gets a silent zero appended by firmware
@@ -232,6 +237,36 @@ read_quantities:
     gain: 1
     count: 2
     icon: "mdi:transmission-tower-export"
+
+  # Fork: grid measurements at the AC port. The current is signed.
+  grid_voltage:
+    translation_key: "grid_voltage"
+    address: 10199
+    data_type: "UINT16"
+    unit: "V"
+    gain: 10
+    count: 1
+    icon: "mdi:sine-wave"
+
+  grid_current:
+    translation_key: "grid_current"
+    address: 10205
+    data_type: "INT16"
+    unit: "A"
+    gain: 100
+    count: 1
+    icon: "mdi:current-ac"
+
+  # "Hz" is not covered by the unit-based inference: declare the device class.
+  grid_frequency:
+    translation_key: "grid_frequency"
+    address: 10213
+    data_type: "UINT16"
+    unit: "Hz"
+    gain: 100
+    count: 1
+    icon: "mdi:sine-wave"
+    device_class: "frequency"
 
   pv_total_generation:
     translation_key: "pv_total_generation"

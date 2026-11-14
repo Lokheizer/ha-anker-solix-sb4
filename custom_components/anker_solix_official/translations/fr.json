@@ -119,6 +119,15 @@
       "ac_grid_output_power": {
         "name": "Sortie CA"
       },
+      "grid_voltage": {
+        "name": "Tension du réseau"
+      },
+      "grid_current": {
+        "name": "Courant du réseau"
+      },
+      "grid_frequency": {
+        "name": "Fréquence du réseau"
+      },
       "pv_total_generation": {
         "name": "Production solaire totale"
       },

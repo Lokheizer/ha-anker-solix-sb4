@@ -203,3 +203,68 @@ def test_redundant_battery_energy_totals_are_not_defined(key: str) -> None:
     data_points, _ = _load_sb4_config()
     assert key not in data_points
     assert {10022, 10024}.isdisjoint(dp.get("address") for dp in data_points.values())
+
+
+# key -> (address, data_type, unit, gain, count). Grid measurements at the AC
+# port; scaling follows the PV/CT registers of the same protocol.
+GRID_MEASUREMENT_SENSORS = {
+    "grid_voltage": (10199, "UINT16", "V", 10, 1),
+    "grid_current": (10205, "INT16", "A", 100, 1),
+    "grid_frequency": (10213, "UINT16", "Hz", 100, 1),
+}
+
+# key -> (device class, display precision, sample value)
+GRID_MEASUREMENT_ENTITIES = {
+    "grid_voltage": (SensorDeviceClass.VOLTAGE, 1, 231.4),
+    "grid_current": (SensorDeviceClass.CURRENT, 2, -3.27),
+    "grid_frequency": (SensorDeviceClass.FREQUENCY, 2, 49.98),
+}
+
+
+@pytest.mark.parametrize("key", sorted(GRID_MEASUREMENT_SENSORS))
+class TestGridMeasurementSensors:
+    def test_matches_register_definition(self, key: str) -> None:
+        data_points, _ = _load_sb4_config()
+        dp = data_points[key]
+        actual = (dp["address"], dp["data_type"], dp["unit"], dp["gain"], dp["count"])
+        assert actual == GRID_MEASUREMENT_SENSORS[key]
+
+    def test_is_exposed_as_sensor(self, key: str) -> None:
+        data_points, _ = _load_sb4_config()
+        assert not data_points[key].get("internal")
+        assert _is_sensor_entity(key, data_points[key])
+
+    def test_sits_inside_a_batch_range(self, key: str) -> None:
+        data_points, batch_ranges = _load_sb4_config()
+        dp = data_points[key]
+        last = dp["address"] + dp["count"] - 1
+        assert any(
+            start <= dp["address"] and last <= end and reg_type == "input"
+            for start, end, reg_type in batch_ranges
+        )
+
+    def test_entity_is_a_measurement_with_matching_class(self, key: str) -> None:
+        device_class, precision, value = GRID_MEASUREMENT_ENTITIES[key]
+        entity = _make_entity(key, value)
+        assert entity.unique_id == f"test-entry_{key}"
+        assert entity.device_class == device_class
+        assert entity.state_class == SensorStateClass.MEASUREMENT
+        assert entity.native_unit_of_measurement == GRID_MEASUREMENT_SENSORS[key][2]
+        assert entity.suggested_display_precision == precision
+        assert entity.native_value == value
+
+    def test_translation_exists_in_all_languages(self, key: str) -> None:
+        data_points, _ = _load_sb4_config()
+        translation_key = data_points[key].get("translation_key", key)
+        for lang_file in _lang_files():
+            sensors = json.loads(lang_file.read_text(encoding="utf-8"))["entity"][
+                "sensor"
+            ]
+            assert sensors.get(translation_key, {}).get("name"), lang_file.name
+
+
+def test_grid_voltage_and_current_have_their_own_batch_range() -> None:
+    """A rejected 10199-10205 read must not affect the block from 10208 on."""
+    _, batch_ranges = _load_sb4_config()
+    assert (10199, 10205, "input") in batch_ranges
+    assert (10208, 10265, "input") in batch_ranges

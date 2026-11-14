@@ -330,6 +330,14 @@
           "power_on": "Power On",
           "power_off": "Power Off"
         }
+      },
+      "export_limit_mode": {
+        "name": "Export Limitation",
+        "state": {
+          "unlimited": "Unlimited",
+          "custom": "Custom",
+          "zero_export": "Zero Export"
+        }
       }
     },
     "number": {
@@ -350,6 +358,9 @@
       },
       "ac_active_power_percent": {
         "name": "Active Power Adjust Percentage"
+      },
+      "export_limit_power": {
+        "name": "Export Limit"
       }
     },
     "switch": {

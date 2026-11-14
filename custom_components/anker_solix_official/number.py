@@ -19,6 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .base_entity import AnkerSolixBaseEntity, async_setup_entities_with_retry
 from .const import DOMAIN, WRITE_CONDITION_REVERT_DELAY
 from .coordinator import AnkerSolixOfficialCoordinator
+from .export_limit import create_export_limit_numbers
 
 # Signal for mutual exclusion updates
 SIGNAL_MUTUAL_EXCLUSION_UPDATE = f"{DOMAIN}_mutual_exclusion_update"
@@ -62,6 +63,10 @@ async def async_setup_entry(
         entity_factory=lambda c, k, cfg: ModbusLocalDeviceNumber(c, k, cfg),
         platform_name="number",
     )
+
+    # Fork: export limitation (export_limit), see export_limit.py
+    if export_limit_numbers := create_export_limit_numbers(coordinator):
+        async_add_entities(export_limit_numbers)
 
 
 class ModbusLocalDeviceNumber(AnkerSolixBaseEntity, NumberEntity):

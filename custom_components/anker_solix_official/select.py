@@ -13,6 +13,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .base_entity import AnkerSolixBaseEntity, async_setup_entities_with_retry
 from .const import DOMAIN
 from .coordinator import AnkerSolixOfficialCoordinator
+from .export_limit import create_export_limit_selects
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -43,6 +44,10 @@ async def async_setup_entry(
         entity_factory=lambda c, k, cfg: ModbusLocalDeviceSelect(c, k, cfg),
         platform_name="select",
     )
+
+    # Fork: export limitation (export_limit), see export_limit.py
+    if export_limit_selects := create_export_limit_selects(coordinator):
+        async_add_entities(export_limit_selects)
 
 
 class ModbusLocalDeviceSelect(AnkerSolixBaseEntity, SelectEntity):

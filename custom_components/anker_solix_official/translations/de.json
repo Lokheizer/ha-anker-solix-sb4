@@ -61,6 +61,9 @@
     },
     "enable_backup_soc_first": {
       "message": "Diese Funktion erfordert das Aktivieren des Backup-Reserve-Schalters in den Einstellungen der Anker-App."
+    },
+    "export_limit_write_failed": {
+      "message": "Die Exportbegrenzung konnte nicht auf das Gerät geschrieben werden. Details stehen im Protokoll."
     }
   },
   "entity": {
@@ -356,6 +359,14 @@
           "power_on": "Einschalten",
           "power_off": "Ausschalten"
         }
+      },
+      "export_limit_mode": {
+        "name": "Exportbegrenzung",
+        "state": {
+          "unlimited": "Unbegrenzt",
+          "custom": "Anpassen",
+          "zero_export": "Null-Export"
+        }
       }
     },
     "number": {
@@ -376,6 +387,9 @@
       },
       "ac_active_power_percent": {
         "name": "Wirkleistungsanpassung in Prozent"
+      },
+      "export_limit_power": {
+        "name": "Exportlimit"
       }
     },
     "switch": {

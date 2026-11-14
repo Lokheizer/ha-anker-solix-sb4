@@ -61,6 +61,9 @@
     },
     "enable_backup_soc_first": {
       "message": "This feature requires enabling the Backup Reserve switch in the Anker app under Settings."
+    },
+    "export_limit_write_failed": {
+      "message": "The export limitation could not be written to the device. See the log for details."
     }
   },
   "entity": {
@@ -356,6 +359,14 @@
           "power_on": "Power On",
           "power_off": "Power Off"
         }
+      },
+      "export_limit_mode": {
+        "name": "Export Limitation",
+        "state": {
+          "unlimited": "Unlimited",
+          "custom": "Custom",
+          "zero_export": "Zero Export"
+        }
       }
     },
     "number": {
@@ -376,6 +387,9 @@
       },
       "ac_active_power_percent": {
         "name": "Active Power Adjust Percentage"
+      },
+      "export_limit_power": {
+        "name": "Export Limit"
       }
     },
     "switch": {

@@ -15,6 +15,7 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 | MPPT-Leistungen PV1–PV4 (SB4 E5000 Pro) | 0.2.0 | Vier Sensoren „PV1…PV4-Leistung“ in W. PV1–3 = Spannung × Strom (Register 10167–10172). PV4 hat auf der SB4 keine eigenen Register und wird berechnet: Solarleistung (Register 10002) − PV1 − PV2 − PV3. |
 | SB4: Sensor „Heizleistung“ | 0.3.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006). |
 | SB4: Exportbegrenzung | 0.3.0 | Auswahl „Exportbegrenzung“ (Unbegrenzt / Anpassen / Null-Export, wie in der Anker-App) und Zahlenwert „Exportlimit“ (100–10000 W) für die Solarbank 4 E5000 Pro, über die Register 10074 und 10075/10076. |
+| SB4: Netzspannung, Netzstrom, Netzfrequenz | 0.3.0 | Drei Sensoren für den Netzanschluss der Solarbank 4 E5000 Pro: „Netzspannung“ (Register 10199, V), „Netzstrom“ (Register 10205, A, vorzeichenbehaftet) und „Netzfrequenz“ (Register 10213, Hz). |
 
 ### Exportbegrenzung
 

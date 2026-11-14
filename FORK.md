@@ -13,6 +13,7 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 | SB4: Sensoren „Verfügbare Ladeleistung“ / „Verfügbare Entladeleistung“ | 0.2.0 | Die bereits gelesenen Register 10036 (Rechargeable Power) und 10038 (Dischargeable Power) stehen bei der Solarbank 4 E5000 Pro als Sensoren (`max_charge_power`, `max_discharge_power`) zur Verfügung. |
 | SB4: Sensoren „Kraftwerksstatus“ und „Batteriegesundheit“ (SOH) | 0.2.0 | Zusätzliche Datenpunkte der Anlagen-Übersicht für die Solarbank 4 E5000 Pro: Register 10000 (Plant Status, `power_station_status`) und 10015 (SOH, `battery_soh`). Dafür kann eine Geräte-Config mit `device_class: none` die aus der Einheit abgeleitete Geräteklasse entfernen. Die Register 10022 / 10024 (Total Battery Charge / Discharge Energy) liefern auf der SB4 dieselben Werte wie die vorhandenen Zähler aus 10262 / 10264 und werden deshalb nicht zusätzlich angeboten. |
 | MPPT-Leistungen PV1–PV4 (SB4 E5000 Pro) | 0.2.0 | Vier Sensoren „PV1…PV4-Leistung“ in W. PV1–3 = Spannung × Strom (Register 10167–10172). PV4 hat auf der SB4 keine eigenen Register und wird berechnet: Solarleistung (Register 10002) − PV1 − PV2 − PV3. |
+| SB4: Sensor „Heizleistung“ | 0.3.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006). |
 
 ### MPPT-Leistungen PV1–PV4
 
@@ -27,6 +28,25 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 - Technik: Abschnitt `derived_quantities` in der Geräte-YAML, ausgewertet von
   `derived_sensor.py` (Operationen `product` und `difference`).
 
+### Heizleistung
+
+`Heizleistung = Solarleistung (10002) + Batterieleistung (10008) − AC-Wirkleistung (10006)`
+
+- Batterieleistung mit Vorzeichen: Entladen zählt als Quelle (positiv), Laden wird
+  abgezogen (negativ).
+- AC-Wirkleistung mit Vorzeichen: Abgabe ins Haus wird abgezogen (positiv), Netzladung
+  zählt als Quelle (negativ). Der Sensor „AC-Ausgang“ (Register 10208) eignet sich dafür
+  nicht, er zeigt beim Netzladen einen positiven Wert.
+- **Restwert**, kein Messwert: Er enthält neben der Heizung auch die Wandlungsverluste
+  und die Messtoleranzen der drei Register.
+- Die Register werden nicht exakt gleichzeitig gemessen; bei Lastsprüngen wäre der Wert
+  kurz negativ. Er wird deshalb auf ganze Watt gerundet und nach unten auf 0 begrenzt.
+- Fremd-PV (Register 10004) fließt nicht durch das Gerät und ist nicht enthalten.
+- AC-Wirkleistung und Batterieleistung sind keine eigenen Entitäten, stehen aber in den
+  Diagnosedaten (`register_data`: `active_power`, `battery_power`).
+- Technik: Operation `balance` in `derived_quantities` (Summe der `sources` minus Summe
+  der `subtract`).
+
 ### SB4: geprüfte, nicht übernommene Register
 
 Diese Register aus der Anker-Modbus-Doku V1.0.0 („Summary – Information“) wurden an einer
@@ -35,7 +55,7 @@ Solarbank 4 E5000 Pro geprüft (Gerätetest November 2026) und bewusst **nicht**
 
 | Register | Doku-Name | Befund am Gerät |
 |----------|-----------|-----------------|
-| 10006 | Active Power | Identisch mit dem vorhandenen Sensor `ac_grid_output_power` (Register 10208). |
+| 10006 | Active Power | Gleicher Betrag wie der vorhandene Sensor `ac_grid_output_power` (Register 10208), aber mit Vorzeichen: negativ beim Netzladen. Kein eigener Sensor; wird intern (`active_power`) für die Heizleistung verwendet. |
 | 10022 / 10024 | Total Battery Charge / Discharge Energy | Identisch mit den vorhandenen Zählern aus 10262 / 10264. |
 | 10040 / 10041 | Number of PCS / Number of Available PCS | Liefern 257 (`0x0101`) und 4865 (`0x1301`), offenbar byteweise gepackte Werte unklarer Bedeutung. Passt nicht zur Doku; die SB4 ist dort nicht als unterstütztes Gerät gelistet. |
 

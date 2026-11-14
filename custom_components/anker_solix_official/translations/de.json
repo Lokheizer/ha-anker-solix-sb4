@@ -98,6 +98,9 @@
       "pv4_power": {
         "name": "PV4-Leistung"
       },
+      "heating_power": {
+        "name": "Heizleistung"
+      },
       "battery_charging_power": {
         "name": "Batterieladeleistung"
       },

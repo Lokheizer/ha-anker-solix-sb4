@@ -98,6 +98,9 @@
       "pv4_power": {
         "name": "PV4-vermogen"
       },
+      "heating_power": {
+        "name": "Verwarmingsvermogen"
+      },
       "battery_charging_power": {
         "name": "Laadvermogen van de batterij"
       },

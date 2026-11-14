@@ -61,6 +61,9 @@
     },
     "enable_backup_soc_first": {
       "message": "Deze functie vereist het inschakelen van de back-upreserveschakelaar in de instellingen van de Anker-app."
+    },
+    "export_limit_write_failed": {
+      "message": "De exportbegrenzing kon niet naar het apparaat worden geschreven. Zie het logboek voor details."
     }
   },
   "entity": {
@@ -356,6 +359,14 @@
           "power_on": "Inschakelen",
           "power_off": "Uitschakelen"
         }
+      },
+      "export_limit_mode": {
+        "name": "Exportbegrenzing",
+        "state": {
+          "unlimited": "Onbeperkt",
+          "custom": "Aangepast",
+          "zero_export": "Nul-export"
+        }
       }
     },
     "number": {
@@ -376,6 +387,9 @@
       },
       "ac_active_power_percent": {
         "name": "Percentage actieve vermogensaanpassing"
+      },
+      "export_limit_power": {
+        "name": "Exportlimiet"
       }
     },
     "switch": {

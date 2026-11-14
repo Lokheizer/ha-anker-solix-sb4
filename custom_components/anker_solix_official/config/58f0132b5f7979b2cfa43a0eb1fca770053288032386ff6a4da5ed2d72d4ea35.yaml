@@ -401,6 +401,28 @@ read_quantities:
     icon: "mdi:feature-search"
     internal: true
 
+  # Fork: raw registers of the export limitation (see export_limit below).
+  # Internal: they are combined into one select and one number entity.
+  export_limit_enable:
+    translation_key: "export_limit_enable"
+    address: 10074
+    data_type: "UINT16"
+    unit: "/"
+    gain: 1
+    count: 1
+    icon: "mdi:transmission-tower-export"
+    internal: true
+
+  export_limit_value:
+    translation_key: "export_limit_value"
+    address: 10075
+    data_type: "INT32"
+    unit: "W"
+    gain: 1
+    count: 2
+    icon: "mdi:transmission-tower-export"
+    internal: true
+
 # =======================================================================
 # Write Quantities Configuration (Control Type)
 # =======================================================================
@@ -642,6 +664,24 @@ derived_quantities:
       - "active_power"
     min_value: 0
     precision: 0
+
+# =======================================================================
+# Export Limitation (fork feature, see export_limit.py)
+# =======================================================================
+# Select "export_limit_mode" + number "export_limit_power", built from the two
+# raw data points above. Register combinations as written by the Anker app
+# (differs from the protocol sheet: 10074 is effectively "export allowed"):
+#   unlimited:   10074 = 1, 10075 = unlimited_value (-1 = 0xFFFF 0xFFFF)
+#   custom:      10074 = 1, 10075 = limit in W
+#   zero_export: 10074 = 0, 10075 = 0
+# min_value / max_value / step: range of the custom limit in W
+export_limit:
+  enable_entity: "export_limit_enable"
+  value_entity: "export_limit_value"
+  unlimited_value: -1
+  min_value: 100
+  max_value: 10000
+  step: 1
 
 # =============================================================================
 # Configuration Instructions

@@ -61,6 +61,9 @@
     },
     "enable_backup_soc_first": {
       "message": "Cette fonctionnalité nécessite d'activer l'interrupteur de réserve de secours dans les paramètres de l'application Anker."
+    },
+    "export_limit_write_failed": {
+      "message": "La limitation d'exportation n'a pas pu être écrite sur l'appareil. Consultez le journal pour plus de détails."
     }
   },
   "entity": {
@@ -359,6 +362,14 @@
           "power_on": "Marche",
           "power_off": "Arrêt"
         }
+      },
+      "export_limit_mode": {
+        "name": "Limitation d'exportation",
+        "state": {
+          "unlimited": "Illimité",
+          "custom": "Personnalisé",
+          "zero_export": "Zéro export"
+        }
       }
     },
     "number": {
@@ -379,6 +390,9 @@
       },
       "ac_active_power_percent": {
         "name": "Pourcentage d'ajustement de la puissance active"
+      },
+      "export_limit_power": {
+        "name": "Limite d'exportation"
       }
     },
     "switch": {

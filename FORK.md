@@ -14,6 +14,33 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 | SB4: Sensoren „Kraftwerksstatus“ und „Batteriegesundheit“ (SOH) | 0.2.0 | Zusätzliche Datenpunkte der Anlagen-Übersicht für die Solarbank 4 E5000 Pro: Register 10000 (Plant Status, `power_station_status`) und 10015 (SOH, `battery_soh`). Dafür kann eine Geräte-Config mit `device_class: none` die aus der Einheit abgeleitete Geräteklasse entfernen. Die Register 10022 / 10024 (Total Battery Charge / Discharge Energy) liefern auf der SB4 dieselben Werte wie die vorhandenen Zähler aus 10262 / 10264 und werden deshalb nicht zusätzlich angeboten. |
 | MPPT-Leistungen PV1–PV4 (SB4 E5000 Pro) | 0.2.0 | Vier Sensoren „PV1…PV4-Leistung“ in W. PV1–3 = Spannung × Strom (Register 10167–10172). PV4 hat auf der SB4 keine eigenen Register und wird berechnet: Solarleistung (Register 10002) − PV1 − PV2 − PV3. |
 | SB4: Sensor „Heizleistung“ | 0.3.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006). |
+| SB4: Exportbegrenzung | 0.3.0 | Auswahl „Exportbegrenzung“ (Unbegrenzt / Anpassen / Null-Export, wie in der Anker-App) und Zahlenwert „Exportlimit“ (100–10000 W) für die Solarbank 4 E5000 Pro, über die Register 10074 und 10075/10076. |
+
+### Exportbegrenzung
+
+Die Register verhalten sich an der SB4 anders, als die Namen in der Anker-Modbus-Doku
+V1.0.0 nahelegen. Register 10074 („Export Power Limitation Enable“) ist faktisch
+„Export erlaubt“. Die Anker-App setzt diese Kombinationen (am Gerät gemessen, November 2026):
+
+| Modus | 10074 | 10075/10076 (INT32, W) |
+|-------|-------|------------------------|
+| Unbegrenzt | 1 | -1 (`0xFFFF 0xFFFF`) |
+| Anpassen | 1 | Limit in W |
+| Null-Export | 0 | 0 |
+
+- Die Auswahl „Exportbegrenzung“ schreibt immer **beide** Register in genau dieser
+  Kombination. Reihenfolge: bei „Null-Export“ erst 10074, dann 10075; sonst erst das
+  Limit, dann 10074. So ist der Zwischenzustand nie offener als Start und Ziel.
+- **Ein neuer Wert in „Exportlimit“ aktiviert die Begrenzung**: Er wird geschrieben und
+  der Modus wechselt auf „Anpassen“, auch aus „Unbegrenzt“ oder „Null-Export“ heraus.
+- Außerhalb von „Anpassen“ steht im Gerät kein Limit. „Exportlimit“ zeigt dann den
+  zuletzt bekannten Anpassen-Wert (bleibt über HA-Neustarts erhalten, Erstwert 100 W);
+  diesen Wert schreibt die Auswahl „Anpassen“.
+- Änderungen in der Anker-App erscheinen nach dem nächsten Abfragezyklus in HA.
+- Schlägt ein Schreibvorgang fehl, meldet HA einen Fehler; Details stehen im Protokoll.
+- Die Rohwerte stehen in den Diagnosedaten (`register_data`: `export_limit_enable`,
+  `export_limit_value`).
+- Technik: Abschnitt `export_limit` in der Geräte-YAML, ausgewertet von `export_limit.py`.
 
 ### MPPT-Leistungen PV1–PV4
 

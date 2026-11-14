@@ -6,7 +6,7 @@ points into the three states the Anker app offers for "export limitation":
     export_limit:
       enable_entity: "export_limit_enable"   # data point key, 0/1
       value_entity: "export_limit_value"     # data point key, limit in W
-      unlimited_value: 65535                 # limit value meaning "no limit"
+      unlimited_value: -1                    # limit value meaning "no limit"
       min_value: 100                         # range of the custom limit in W
       max_value: 10000
       step: 1
@@ -15,7 +15,7 @@ Register combinations, as written by the app (verified on a Solarbank 4 E5000
 Pro; the enable register is effectively "export allowed", not "limit active"):
 
     mode         enable  value
-    unlimited    1       unlimited_value
+    unlimited    1       unlimited_value (-1, i.e. 0xFFFF 0xFFFF as INT32)
     custom       1       limit in W
     zero_export  0       0
 
@@ -129,11 +129,12 @@ def get_export_limit_config(
         or max_value is None
         or step is None
         or step < 1
-        or not 0 <= min_value <= max_value < unlimited_value
+        or not 0 <= min_value <= max_value
+        or 0 <= unlimited_value <= max_value
     ):
         _LOGGER.warning(
-            "Ignoring '%s': need 0 <= min_value <= max_value < unlimited_value "
-            "and step >= 1",
+            "Ignoring '%s': need 0 <= min_value <= max_value, step >= 1 and an "
+            "unlimited_value outside 0..max_value",
             CONFIG_SECTION,
         )
         return None
@@ -162,10 +163,13 @@ def resolve_mode(enable: Any, value: Any, unlimited_value: int) -> str | None:
     if enable_int == 0:
         return MODE_ZERO_EXPORT
     value_int = _to_int(value)
-    if value_int is None or value_int < 0:
+    if value_int is None:
         return None
-    if value_int >= unlimited_value:
+    if value_int == unlimited_value:
         return MODE_UNLIMITED
+    if value_int < 0:
+        # Not a limit and not the known "unlimited" marker: do not guess.
+        return None
     return MODE_CUSTOM
 
 
@@ -209,7 +213,11 @@ class ExportLimitController:
         if self.mode == MODE_CUSTOM:
             device_value = _to_int(self._raw(self.config.value_key))
             if device_value is not None:
-                self._remembered_power = device_value
+                # Show what the device reports, but only keep a limit from the
+                # configured range as the default for a later "custom".
+                if self.config.min_value <= device_value <= self.config.max_value:
+                    self._remembered_power = device_value
+                return device_value
         if self._remembered_power is None:
             return self.config.min_value
         return self._remembered_power

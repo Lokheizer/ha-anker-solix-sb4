@@ -23,7 +23,7 @@ V1.0.0 nahelegen. Register 10074 („Export Power Limitation Enable“) ist fakt
 
 | Modus | 10074 | 10075/10076 (INT32, W) |
 |-------|-------|------------------------|
-| Unbegrenzt | 1 | 65535 |
+| Unbegrenzt | 1 | -1 (`0xFFFF 0xFFFF`) |
 | Anpassen | 1 | Limit in W |
 | Null-Export | 0 | 0 |
 

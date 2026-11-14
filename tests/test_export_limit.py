@@ -61,7 +61,8 @@ RAW_DATA_POINTS = {
 
 ENABLE = "export_limit_enable"
 VALUE = "export_limit_value"
-UNLIMITED = 65535
+# INT32 -1 = 0xFFFF 0xFFFF, read from the device with the app set to "unlimited".
+UNLIMITED = -1
 
 
 def _load_sb4() -> tuple[dict[str, Any], dict[str, Any], list]:
@@ -172,7 +173,7 @@ MINIMAL_DATA_POINTS = {
 MINIMAL_SECTION = {
     "enable_entity": "en",
     "value_entity": "val",
-    "unlimited_value": 65535,
+    "unlimited_value": -1,
     "min_value": 100,
     "max_value": 10000,
 }
@@ -181,6 +182,12 @@ MINIMAL_SECTION = {
 class TestConfigValidation:
     DATA_POINTS = MINIMAL_DATA_POINTS
     SECTION = MINIMAL_SECTION
+
+    def test_unlimited_marker_may_lie_above_the_range(self) -> None:
+        section = {**self.SECTION, "unlimited_value": 65535}
+        config = get_export_limit_config({"export_limit": section}, self.DATA_POINTS)
+        assert config is not None
+        assert config.unlimited_value == 65535
 
     def test_valid_section_with_default_step(self) -> None:
         config = get_export_limit_config(
@@ -201,7 +208,9 @@ class TestConfigValidation:
             {"unlimited_value": None},
             {"max_value": None},
             {"min_value": 20000},
-            {"max_value": 65535},
+            {"unlimited_value": 0},
+            {"unlimited_value": 400},
+            {"unlimited_value": 10000},
             {"min_value": -1},
             {"step": 0},
         ],
@@ -233,14 +242,15 @@ class TestResolveMode:
         ("enable", "value", "expected"),
         [
             # The three combinations the Anker app writes.
-            (1, 65535, MODE_UNLIMITED),
+            (1, -1, MODE_UNLIMITED),
             (1, 400, MODE_CUSTOM),
             (0, 0, MODE_ZERO_EXPORT),
             # Enable register decides; the value is irrelevant when it is 0.
             (0, 400, MODE_ZERO_EXPORT),
             (0, None, MODE_ZERO_EXPORT),
             (1, 0, MODE_CUSTOM),
-            (1, 70000, MODE_UNLIMITED),
+            # 0x0000FFFF is a (huge) limit, not the "unlimited" marker.
+            (1, 65535, MODE_CUSTOM),
             ("1", "400", MODE_CUSTOM),
         ],
     )
@@ -249,7 +259,7 @@ class TestResolveMode:
 
     @pytest.mark.parametrize(
         ("enable", "value"),
-        [(None, 400), (1, None), ("x", 400), (1, "x"), (True, 400), (1, -1)],
+        [(None, 400), (1, None), ("x", 400), (1, "x"), (True, 400), (1, -2)],
     )
     def test_unreadable_values_give_no_mode(self, enable, value) -> None:
         assert resolve_mode(enable, value, UNLIMITED) is None
@@ -268,7 +278,7 @@ class TestControllerState:
         assert controller.mode is None
 
     def test_protected_values_win_over_device_data(self, coord, controller) -> None:
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         coord._protected[ENABLE] = 0
         coord._protected[VALUE] = 0
         assert controller.mode == MODE_ZERO_EXPORT
@@ -278,16 +288,26 @@ class TestControllerState:
         assert controller.power == 400
 
     def test_power_defaults_to_min_value(self, coord, controller) -> None:
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         assert controller.power == 100
 
     def test_power_remembers_last_custom_value(self, coord, controller) -> None:
         coord.data = {ENABLE: 1, VALUE: 400}
         assert controller.power == 400
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         assert controller.power == 400
         coord.data = {ENABLE: 0, VALUE: 0}
         assert controller.power == 400
+
+    def test_out_of_range_device_limit_is_shown_but_not_remembered(
+        self, coord, controller
+    ) -> None:
+        """A limit outside 100..10000 W is not reused when "custom" is selected."""
+        coord.data = {ENABLE: 1, VALUE: 65535}
+        assert controller.mode == MODE_CUSTOM
+        assert controller.power == 65535
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
+        assert controller.power == 100
 
     def test_remember_power_without_overwrite(self, controller) -> None:
         controller.remember_power(600, overwrite=False)
@@ -301,13 +321,13 @@ class TestControllerApply:
     async def test_unlimited_writes_limit_then_enable(self, coord, controller) -> None:
         coord.data = {ENABLE: 0, VALUE: 0}
         assert await controller.async_apply(MODE_UNLIMITED)
-        assert _writes(coord) == [(10075, 65535, "INT32"), (10074, 1, "UINT16")]
+        assert _writes(coord) == [(10075, UNLIMITED, "INT32"), (10074, 1, "UINT16")]
         assert controller.mode == MODE_UNLIMITED
 
     async def test_zero_export_writes_enable_then_limit(
         self, coord, controller
     ) -> None:
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         assert await controller.async_apply(MODE_ZERO_EXPORT)
         assert _writes(coord) == [(10074, 0, "UINT16"), (10075, 0, "INT32")]
         assert controller.mode == MODE_ZERO_EXPORT
@@ -322,7 +342,7 @@ class TestControllerApply:
     async def test_custom_without_power_uses_remembered_value(
         self, coord, controller
     ) -> None:
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         controller.remember_power(800)
         assert await controller.async_apply(MODE_CUSTOM)
         assert _writes(coord)[0] == (10075, 800, "INT32")
@@ -330,7 +350,7 @@ class TestControllerApply:
     async def test_custom_without_any_known_power_uses_min_value(
         self, coord, controller
     ) -> None:
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         assert await controller.async_apply(MODE_CUSTOM)
         assert _writes(coord)[0] == (10075, 100, "INT32")
 
@@ -405,7 +425,7 @@ class TestSelect:
     @pytest.mark.parametrize(
         ("data", "expected"),
         [
-            ({ENABLE: 1, VALUE: 65535}, MODE_UNLIMITED),
+            ({ENABLE: 1, VALUE: UNLIMITED}, MODE_UNLIMITED),
             ({ENABLE: 1, VALUE: 400}, MODE_CUSTOM),
             ({ENABLE: 0, VALUE: 0}, MODE_ZERO_EXPORT),
             ({}, None),
@@ -423,7 +443,7 @@ class TestSelect:
     @pytest.mark.parametrize(
         ("option", "expected_writes"),
         [
-            (MODE_UNLIMITED, [(10075, 65535, "INT32"), (10074, 1, "UINT16")]),
+            (MODE_UNLIMITED, [(10075, UNLIMITED, "INT32"), (10074, 1, "UINT16")]),
             (MODE_CUSTOM, [(10075, 400, "INT32"), (10074, 1, "UINT16")]),
             (MODE_ZERO_EXPORT, [(10074, 0, "UINT16"), (10075, 0, "INT32")]),
         ],
@@ -484,7 +504,7 @@ class TestNumber:
         coord.data = {ENABLE: 1, VALUE: 400}
         entity = _make_number(coord, controller)
         assert entity.native_value == 400
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         assert entity.native_value == 400
 
     def test_none_when_unavailable(self, coord, controller) -> None:
@@ -514,7 +534,7 @@ class TestNumber:
         assert entity.native_value == 400
 
     async def test_restores_last_custom_limit(self, hass, coord, controller) -> None:
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         entity = _make_number(coord, controller)
         entity.hass = hass
         entity.async_get_last_number_data = AsyncMock(
@@ -538,7 +558,7 @@ class TestNumber:
 
     @pytest.mark.parametrize("last", [None, SimpleNamespace(native_value=None)])
     async def test_nothing_to_restore(self, hass, coord, controller, last) -> None:
-        coord.data = {ENABLE: 1, VALUE: 65535}
+        coord.data = {ENABLE: 1, VALUE: UNLIMITED}
         entity = _make_number(coord, controller)
         entity.hass = hass
         entity.async_get_last_number_data = AsyncMock(return_value=last)

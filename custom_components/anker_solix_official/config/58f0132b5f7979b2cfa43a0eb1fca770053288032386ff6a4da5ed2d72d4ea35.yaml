@@ -625,14 +625,14 @@ derived_quantities:
 # Select "export_limit_mode" + number "export_limit_power", built from the two
 # raw data points above. Register combinations as written by the Anker app
 # (differs from the protocol sheet: 10074 is effectively "export allowed"):
-#   unlimited:   10074 = 1, 10075 = unlimited_value
+#   unlimited:   10074 = 1, 10075 = unlimited_value (-1 = 0xFFFF 0xFFFF)
 #   custom:      10074 = 1, 10075 = limit in W
 #   zero_export: 10074 = 0, 10075 = 0
 # min_value / max_value / step: range of the custom limit in W
 export_limit:
   enable_entity: "export_limit_enable"
   value_entity: "export_limit_value"
-  unlimited_value: 65535
+  unlimited_value: -1
   min_value: 100
   max_value: 10000
   step: 1

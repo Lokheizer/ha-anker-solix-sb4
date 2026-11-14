@@ -3,7 +3,9 @@
 Covers the pure calculation, the entity, the sensor platform hook and the
 shipped Solarbank 4 E5000 Pro configuration: MPPT input power PV1-3 is
 voltage x current (registers 10167-10172), PV4 has no registers on that
-device and is the remainder of the PCS PV power (register 10002).
+device and is the remainder of the PCS PV power (register 10002). The
+heating power is the power balance of the device: PCS PV power + battery power
+(register 10008) - AC active power (register 10006).
 """
 
 from __future__ import annotations
@@ -165,6 +167,58 @@ class TestComputeDerivedValues:
     def test_no_definitions_gives_empty_result(self) -> None:
         assert compute_derived_values({}, DAYLIGHT_FRAME) == {}
 
+    def test_balance_is_sum_of_sources_minus_sum_of_subtract(self) -> None:
+        definitions = {
+            "b": {"operation": "balance", "sources": ["a", "b"], "subtract": ["c", "d"]}
+        }
+        frame = {"a": 1000, "b": -600, "c": 300, "d": 50}
+        assert compute_derived_values(definitions, frame)["b"] == 50
+
+    def test_balance_without_subtract_is_a_plain_sum(self) -> None:
+        definitions = {"s": {"operation": "balance", "sources": ["a", "b"]}}
+        assert compute_derived_values(definitions, {"a": 2, "b": 3})["s"] == 5
+
+    def test_balance_subtracting_a_negative_value_adds_it(self) -> None:
+        definitions = {
+            "b": {"operation": "balance", "sources": ["a"], "subtract": ["c"]}
+        }
+        assert compute_derived_values(definitions, {"a": -1000, "c": -1080})["b"] == 80
+
+    def test_balance_can_use_an_earlier_derived_quantity(self) -> None:
+        definitions = {
+            **PV_POWER_DEFINITIONS,
+            "b": {
+                "operation": "balance",
+                "sources": ["pv_power"],
+                "subtract": ["pv1_power", "pv2_power"],
+            },
+        }
+        assert compute_derived_values(definitions, DAYLIGHT_FRAME)["b"] == 271
+
+    @pytest.mark.parametrize("missing", ["a", "c"])
+    def test_balance_with_missing_value_gives_none_not_zero(self, missing: str) -> None:
+        definitions = {
+            "b": {"operation": "balance", "sources": ["a"], "subtract": ["c"]}
+        }
+        frame = {"a": 500, "c": 100}
+        del frame[missing]
+        assert compute_derived_values(definitions, frame)["b"] is None
+
+    def test_balance_honours_min_value_and_precision(self) -> None:
+        definitions = {
+            "b": {
+                "operation": "balance",
+                "sources": ["a"],
+                "subtract": ["c"],
+                "min_value": 0,
+                "precision": 0,
+            }
+        }
+        assert compute_derived_values(definitions, {"a": 500, "c": 510})["b"] == 0
+        value = compute_derived_values(definitions, {"a": 500.4, "c": 450})["b"]
+        assert value == 50
+        assert isinstance(value, int)
+
 
 class TestGetDerivedDefinitions:
     @pytest.mark.parametrize(
@@ -180,6 +234,14 @@ class TestGetDerivedDefinitions:
         )
         assert list(definitions) == ["pv1_power", "pv2_power", "pv_rest"]
 
+    def test_balance_with_and_without_subtract_is_valid(self) -> None:
+        section = {
+            "with": {"operation": "balance", "sources": ["a"], "subtract": ["c"]},
+            "without": {"operation": "balance", "sources": ["a", "b"]},
+        }
+        definitions = get_derived_definitions({"derived_quantities": section})
+        assert list(definitions) == ["with", "without"]
+
     @pytest.mark.parametrize(
         "definition",
         [
@@ -190,6 +252,11 @@ class TestGetDerivedDefinitions:
             {"operation": "product", "sources": []},
             {"operation": "product", "sources": "a"},
             {"operation": "product", "sources": ["a", 5]},
+            {"operation": "balance", "sources": ["a"], "subtract": []},
+            {"operation": "balance", "sources": ["a"], "subtract": "c"},
+            {"operation": "balance", "sources": ["a"], "subtract": ["c", 5]},
+            {"operation": "balance", "sources": ["a"], "subtract": None},
+            {"operation": "difference", "sources": ["a", "b"], "subtract": ["c"]},
         ],
     )
     def test_invalid_definition_is_skipped_with_warning(
@@ -296,6 +363,17 @@ class TestDerivedSensorEntity:
             "sources": ["pv_power", "pv1_power", "pv2_power"],
         }
 
+    def test_attributes_of_a_balance_list_what_is_subtracted(self) -> None:
+        definitions = {
+            "b": {"operation": "balance", "sources": ["a", "b"], "subtract": ["c"]}
+        }
+        entity = _make_entity(FakeCoordinator(), "b", definitions)
+        assert entity.extra_state_attributes == {
+            "operation": "balance",
+            "sources": ["a", "b"],
+            "subtract": ["c"],
+        }
+
 
 class TestCreateDerivedSensors:
     def test_coordinator_without_config_cache_creates_nothing(self) -> None:
@@ -387,6 +465,12 @@ SB4_PV_STRING_DATA_POINTS = {
     "pv3_current": (10172, "INT16", "A", 100, 1),
 }
 SB4_PV_POWER_KEYS = ["pv1_power", "pv2_power", "pv3_power", "pv4_power"]
+SB4_DERIVED_KEYS = [*SB4_PV_POWER_KEYS, "heating_power"]
+# Signed powers behind the heating power: (address, data_type, unit, gain, count)
+SB4_POWER_BALANCE_DATA_POINTS = {
+    "active_power": (10006, "INT32", "W", 1, 2),
+    "battery_power": (10008, "INT32", "W", 1, 2),
+}
 # X1-style PV4 voltage/current: not implemented on the SB4, must never be read.
 SB4_UNIMPLEMENTED_PV4_REGISTERS = (10173, 10174)
 
@@ -436,9 +520,9 @@ class TestShippedSb4Config:
             for address in SB4_UNIMPLEMENTED_PV4_REGISTERS:
                 assert not dp["address"] <= address <= last, key
 
-    def test_pv_power_sensors_are_declared_as_power_in_watt(self) -> None:
+    def test_derived_sensors_are_declared_as_power_in_watt(self) -> None:
         definitions = get_derived_definitions(_load_sb4_config())
-        assert list(definitions) == SB4_PV_POWER_KEYS
+        assert list(definitions) == SB4_DERIVED_KEYS
         for key, definition in definitions.items():
             assert definition["unit"] == "W", key
             assert definition["device_class"] == "power", key
@@ -466,6 +550,43 @@ class TestShippedSb4Config:
         # The total is the PCS PV power register, not third-party PV.
         assert cfg["read_quantities"]["pv_power"]["address"] == 10002
 
+    def test_heating_power_is_pv_plus_battery_minus_ac_active_power(self) -> None:
+        cfg = _load_sb4_config()
+        definition = get_derived_definitions(cfg)["heating_power"]
+        assert definition["operation"] == "balance"
+        assert definition["sources"] == ["pv_power", "battery_power"]
+        assert definition["subtract"] == ["active_power"]
+        # PCS PV power only: third-party PV does not pass through the device.
+        assert cfg["read_quantities"]["pv_power"]["address"] == 10002
+
+    def test_power_balance_data_points_match_register_sheet(self) -> None:
+        data_points, _ = parse_device_configuration(_load_sb4_config())
+        for key, expected in SB4_POWER_BALANCE_DATA_POINTS.items():
+            dp = data_points[key]
+            actual = (
+                dp["address"],
+                dp["data_type"],
+                dp["unit"],
+                dp["gain"],
+                dp["count"],
+            )
+            assert actual == expected, key
+
+    def test_power_balance_data_points_create_no_entities(self) -> None:
+        data_points, _ = parse_device_configuration(_load_sb4_config())
+        for key in SB4_POWER_BALANCE_DATA_POINTS:
+            assert not _is_sensor_entity(key, data_points[key]), key
+
+    def test_power_balance_data_points_sit_inside_an_input_batch_range(self) -> None:
+        data_points, batch_ranges = parse_device_configuration(_load_sb4_config())
+        for key in SB4_POWER_BALANCE_DATA_POINTS:
+            first = data_points[key]["address"]
+            last = first + data_points[key]["count"] - 1
+            assert any(
+                start <= first and last <= end and reg_type == "input"
+                for start, end, reg_type in batch_ranges
+            ), key
+
     def test_every_source_is_a_data_point_or_an_earlier_derived_quantity(
         self,
     ) -> None:
@@ -473,7 +594,7 @@ class TestShippedSb4Config:
         data_points, _ = parse_device_configuration(cfg)
         known = set(data_points)
         for key, definition in get_derived_definitions(cfg).items():
-            for source in definition["sources"]:
+            for source in definition["sources"] + definition.get("subtract", []):
                 assert source in known, (key, source)
             known.add(key)
 
@@ -601,6 +722,7 @@ class TestSb4ReadPath:
         values = {
             sensor.translation_key: sensor.native_value
             for sensor in create_derived_sensors(coordinator)
+            if sensor.translation_key in SB4_PV_POWER_KEYS
         }
 
         assert values == {
@@ -623,4 +745,99 @@ class TestSb4ReadPath:
         values = compute_derived_values(
             get_derived_definitions(_load_sb4_config()), data
         )
-        assert values == dict.fromkeys(SB4_PV_POWER_KEYS, 0)
+        assert values == dict.fromkeys(SB4_DERIVED_KEYS, 0)
+
+
+def _int32(value: int, address: int) -> dict[int, int]:
+    """Registers of a signed 32-bit value (high word first, two's complement)."""
+    raw = value & 0xFFFFFFFF
+    return {address: raw >> 16, address + 1: raw & 0xFFFF}
+
+
+def _sb4_power_registers(pv: int, battery: int, active: int) -> dict[int, int]:
+    """PCS PV power, battery power (+ discharging) and AC active power (+ output)."""
+    return {
+        **_int32(pv, 10002),
+        **_int32(active, 10006),
+        **_int32(battery, 10008),
+    }
+
+
+class TestSb4HeatingPower:
+    async def _heating_power(self, registers: dict[int, int]) -> Any:
+        data, _ = await _read_sb4_frame(registers)
+        values = compute_derived_values(
+            get_derived_definitions(_load_sb4_config()), data
+        )
+        return values["heating_power"]
+
+    async def test_signed_powers_are_decoded(self) -> None:
+        data, _ = await _read_sb4_frame(
+            _sb4_power_registers(pv=0, battery=-1000, active=-1080)
+        )
+        assert data["active_power"] == -1080
+        assert data["battery_power"] == -1000
+
+    async def test_needs_no_request_beyond_the_existing_batch_ranges(self) -> None:
+        _, device = await _read_sb4_frame(_sb4_power_registers(0, -1000, -1080))
+        assert (10000, 51) in device.input_requests
+        for address, count in device.input_requests:
+            if address != 10000:
+                assert not address <= 10009 < address + count, (address, count)
+                assert not 10006 <= address <= 10009, (address, count)
+
+    async def test_pv_feeds_house_and_battery(self) -> None:
+        # 1000 W in from PV, 600 W into the battery, 350 W out via AC.
+        registers = _sb4_power_registers(pv=1000, battery=-600, active=350)
+        assert await self._heating_power(registers) == 50
+
+    async def test_charging_from_the_grid(self) -> None:
+        # 1080 W in from the grid (negative active power), 1000 W into the battery.
+        registers = _sb4_power_registers(pv=0, battery=-1000, active=-1080)
+        assert await self._heating_power(registers) == 80
+
+    async def test_grid_and_pv_charge_the_battery_together(self) -> None:
+        registers = _sb4_power_registers(pv=400, battery=-1500, active=-1190)
+        assert await self._heating_power(registers) == 90
+
+    async def test_discharging_into_the_house(self) -> None:
+        # 800 W in from the battery, 740 W out via AC.
+        registers = _sb4_power_registers(pv=0, battery=800, active=740)
+        assert await self._heating_power(registers) == 60
+
+    async def test_standby_draw_from_the_grid(self) -> None:
+        registers = _sb4_power_registers(pv=0, battery=0, active=-12)
+        assert await self._heating_power(registers) == 12
+
+    async def test_never_negative_when_registers_are_out_of_step(self) -> None:
+        # Output already jumped, PV value still from the previous moment.
+        registers = _sb4_power_registers(pv=500, battery=0, active=510)
+        assert await self._heating_power(registers) == 0
+
+    async def test_third_party_pv_is_not_part_of_the_balance(self) -> None:
+        registers = {
+            **_sb4_power_registers(pv=1000, battery=-600, active=350),
+            **_int32(400, 10004),
+        }
+        assert await self._heating_power(registers) == 50
+
+    async def test_sensor_entity_reports_the_heating_power(self) -> None:
+        data, _ = await _read_sb4_frame(
+            _sb4_power_registers(pv=1000, battery=-600, active=350)
+        )
+        cfg = _load_sb4_config()
+        coordinator = FakeCoordinator(data)
+        coordinator._full_config_cache = cfg
+        coordinator._device_config_cache, _ = parse_device_configuration(cfg)
+
+        sensor = next(
+            s
+            for s in create_derived_sensors(coordinator)
+            if s.translation_key == "heating_power"
+        )
+
+        assert sensor.native_value == 50
+        assert sensor.native_unit_of_measurement == "W"
+        assert sensor.device_class == "power"
+        assert sensor.state_class == "measurement"
+        assert sensor.unique_id == "test-entry_heating_power"

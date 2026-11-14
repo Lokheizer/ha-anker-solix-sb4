@@ -101,6 +101,9 @@
       "pv4_power": {
         "name": "PV4 Power"
       },
+      "heating_power": {
+        "name": "Heating Power"
+      },
       "battery_charging_power": {
         "name": "Battery Charging Power"
       },

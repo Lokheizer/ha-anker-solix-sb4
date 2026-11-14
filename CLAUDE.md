@@ -83,7 +83,7 @@ git diff --name-only --diff-filter=ACMR origin/main -- '*.py' | xargs -r .venv/b
 
 ## Versionen & Releases
 
-- Eigenes SemVer-Schema, unabhängig von Upstream (Start `0.1.0`):
+- Eigenes SemVer-Schema, unabhängig von Upstream (Start `1.0.0`):
   Minor = neue Features / Upstream-Übernahme, Patch = Fixes.
 - Bei einem Release: `version` in `manifest.json` anheben und Versionstabelle
   (Fork-Version ↔ Upstream-Basis) in `FORK.md` ergänzen.

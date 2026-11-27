@@ -268,3 +268,56 @@ def test_grid_voltage_and_current_have_their_own_batch_range() -> None:
     _, batch_ranges = _load_sb4_config()
     assert (10199, 10205, "input") in batch_ranges
     assert (10208, 10265, "input") in batch_ranges
+
+
+# Off-grid socket power: address from the HA-Anker-Solix-Extras integration,
+# confirmed on the device against a Shelly at the socket. Positive = output.
+# Display only, the socket is already part of active_power (10006).
+OFF_GRID_POWER = ("off_grid_power", (10233, "INT32", "W", 1, 2))
+
+
+class TestOffGridPowerSensor:
+    def test_matches_register_definition(self) -> None:
+        key, expected = OFF_GRID_POWER
+        data_points, _ = _load_sb4_config()
+        dp = data_points[key]
+        actual = (dp["address"], dp["data_type"], dp["unit"], dp["gain"], dp["count"])
+        assert actual == expected
+
+    def test_is_exposed_as_sensor_without_power_split(self) -> None:
+        key, _ = OFF_GRID_POWER
+        data_points, _ = _load_sb4_config()
+        assert not data_points[key].get("internal")
+        assert "power_split_mode" not in data_points[key]
+        assert _is_sensor_entity(key, data_points[key])
+
+    def test_sits_inside_the_10208_batch_range(self) -> None:
+        key, _ = OFF_GRID_POWER
+        data_points, batch_ranges = _load_sb4_config()
+        dp = data_points[key]
+        last = dp["address"] + dp["count"] - 1
+        assert any(
+            start <= dp["address"] and last <= end and reg_type == "input"
+            for start, end, reg_type in batch_ranges
+        )
+        assert (10208, 10265, "input") in batch_ranges
+
+    @pytest.mark.parametrize("value", [480, 0, -25])
+    def test_entity_is_a_power_measurement_keeping_the_sign(self, value: int) -> None:
+        key, _ = OFF_GRID_POWER
+        entity = _make_entity(key, value)
+        assert entity.unique_id == f"test-entry_{key}"
+        assert entity.device_class == SensorDeviceClass.POWER
+        assert entity.state_class == SensorStateClass.MEASUREMENT
+        assert entity.native_unit_of_measurement == "W"
+        assert entity.native_value == value
+
+    def test_translation_exists_in_all_languages(self) -> None:
+        key, _ = OFF_GRID_POWER
+        data_points, _ = _load_sb4_config()
+        translation_key = data_points[key].get("translation_key", key)
+        for lang_file in _lang_files():
+            sensors = json.loads(lang_file.read_text(encoding="utf-8"))["entity"][
+                "sensor"
+            ]
+            assert sensors.get(translation_key, {}).get("name"), lang_file.name

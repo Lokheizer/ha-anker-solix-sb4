@@ -72,6 +72,9 @@
       "pv4_power": {
         "name": "PV4 Power"
       },
+      "heating_power": {
+        "name": "Heating Power"
+      },
       "battery_charging_power": {
         "name": "Battery Charging Power"
       },
@@ -89,6 +92,9 @@
       },
       "ac_grid_output_power": {
         "name": "AC Output"
+      },
+      "off_grid_power": {
+        "name": "Off-grid Power"
       },
       "grid_voltage": {
         "name": "Grid Voltage"

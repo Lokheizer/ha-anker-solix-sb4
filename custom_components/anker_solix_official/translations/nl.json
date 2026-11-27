@@ -101,6 +101,9 @@
       "pv4_power": {
         "name": "PV4-vermogen"
       },
+      "heating_power": {
+        "name": "Verwarmingsvermogen"
+      },
       "battery_charging_power": {
         "name": "Laadvermogen van de batterij"
       },
@@ -118,6 +121,9 @@
       },
       "ac_grid_output_power": {
         "name": "AC-uitvoer"
+      },
+      "off_grid_power": {
+        "name": "Off-grid vermogen"
       },
       "grid_voltage": {
         "name": "Netspanning"

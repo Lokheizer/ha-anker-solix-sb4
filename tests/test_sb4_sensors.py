@@ -354,7 +354,7 @@ class TestBatteryTemperatureSensor:
         )
         assert (10090, 10156, "input") in batch_ranges
 
-    @pytest.mark.parametrize("value", [23.4, 0, -5.3])
+    @pytest.mark.parametrize("value", [23.0, 0, -5.0])
     def test_entity_is_a_temperature_measurement_keeping_the_sign(
         self, value: float
     ) -> None:
@@ -364,8 +364,14 @@ class TestBatteryTemperatureSensor:
         assert entity.device_class == SensorDeviceClass.TEMPERATURE
         assert entity.state_class == SensorStateClass.MEASUREMENT
         assert entity.native_unit_of_measurement == "°C"
-        assert entity.suggested_display_precision == 1
         assert entity.native_value == value
+
+    def test_is_displayed_in_whole_degrees(self) -> None:
+        """The device only reports whole degrees despite the 0.1 °C scaling."""
+        key, _ = BATTERY_TEMPERATURE
+        data_points, _ = _load_sb4_config()
+        assert data_points[key]["display_precision"] == 0
+        assert _make_entity(key, 23.0).suggested_display_precision == 0
 
     def test_translation_exists_in_all_languages(self) -> None:
         key, _ = BATTERY_TEMPERATURE

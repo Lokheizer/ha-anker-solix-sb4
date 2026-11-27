@@ -191,6 +191,15 @@ class ModbusLocalDeviceSensor(AnkerSolixBaseEntity, SensorEntity):
             precision = round(math.log10(gain))
             if 10**precision == gain:
                 self._attr_suggested_display_precision = precision
+        # Fork: "display_precision" in the device YAML overrides the gain-derived
+        # value, e.g. for a register in tenths that only reports whole numbers.
+        declared_precision = config.get("display_precision")
+        if (
+            isinstance(declared_precision, int)
+            and not isinstance(declared_precision, bool)
+            and declared_precision >= 0
+        ):
+            self._attr_suggested_display_precision = declared_precision
 
     def _parse_declared_class(self, enum_cls: type, raw: Any) -> Any | None:
         if raw is None:

@@ -17,6 +17,7 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 | SB4: Netzspannung, Netzstrom, Netzfrequenz | 1.0.0 | Drei Sensoren für den Netzanschluss der Solarbank 4 E5000 Pro: „Netzspannung“ (Register 10199, V), „Netzstrom“ (Register 10205, A, vorzeichenbehaftet) und „Netzfrequenz“ (Register 10213, Hz). |
 | SB4: Sensor „Heizleistung“ | 1.1.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006, inkl. Offgrid-Steckdose). |
 | SB4: Sensor „Offgrid-Leistung“ | 1.1.0 | Wirkleistung der Offgrid-Steckdose der Solarbank 4 E5000 Pro in W (Register 10233/10234, positiv = Abgabe). Am Gerät mit einem Shelly an der Steckdose bestätigt. Reiner Anzeigesensor: Die Leistung ist bereits in der AC-Wirkleistung (Register 10006) enthalten. |
+| SB4: Sensor „Batterietemperatur“ | 1.2.0 | Batterietemperatur der Solarbank 4 E5000 Pro in °C (Register 10156, INT16, 0,1 °C, vorzeichenbehaftet). Die Adresse stammt aus der Integration [HA-Anker-Solix-Extras](https://github.com/MattCheetham/HA-Anker-Solix-Extras). |
 
 ### Exportbegrenzung
 

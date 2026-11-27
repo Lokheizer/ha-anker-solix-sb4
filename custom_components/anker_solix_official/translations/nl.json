@@ -86,6 +86,9 @@
       "battery_soh": {
         "name": "Batterijgezondheid"
       },
+      "battery_temperature": {
+        "name": "Batterijtemperatuur"
+      },
       "pv_power": {
         "name": "Zonne-energie"
       },

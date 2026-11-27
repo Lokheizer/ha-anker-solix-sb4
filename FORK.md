@@ -18,6 +18,7 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 | SB4: Sensor „Heizleistung“ | 1.1.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006, inkl. Offgrid-Steckdose). |
 | SB4: Sensor „Offgrid-Leistung“ | 1.1.0 | Wirkleistung der Offgrid-Steckdose der Solarbank 4 E5000 Pro in W (Register 10233/10234, positiv = Abgabe). Am Gerät mit einem Shelly an der Steckdose bestätigt. Reiner Anzeigesensor: Die Leistung ist bereits in der AC-Wirkleistung (Register 10006) enthalten. |
 | SB4: Sensor „Batterietemperatur“ | 1.2.0 | Batterietemperatur der Solarbank 4 E5000 Pro in °C (Register 10156, INT16, 0,1 °C, vorzeichenbehaftet). Die Adresse stammt aus der Integration [HA-Anker-Solix-Extras](https://github.com/MattCheetham/HA-Anker-Solix-Extras). Das Gerät liefert nur ganze Grad, die Anzeige ist deshalb ohne Nachkommastelle. Dafür kann eine Geräte-Config mit `display_precision` die aus `gain` abgeleitete Anzeigegenauigkeit überschreiben. |
+| SB4: feste Lade-/Entladegrenze für den Batterie-Sollwert | 1.2.0 | Der Sollwert „Batterieleistung“ (Drittanbieter-Steuerung, Register 10071) der Solarbank 4 E5000 Pro ist fest auf 3600 W beim Laden und 2500 W beim Entladen begrenzt statt auf die gerade verfügbare Leistung. Sonst startet die Batterieheizung nie. Vorgezogener Fix für [Upstream-Issue #172](https://github.com/anker-charging/ha-anker-solix-official/issues/172). |
 
 ### Exportbegrenzung
 
@@ -84,6 +85,32 @@ V1.0.0 nahelegen. Register 10074 („Export Power Limitation Enable“) ist fakt
   Diagnosedaten (`register_data`: `active_power`, `battery_power`).
 - Technik: Operation `balance` in `derived_quantities` (Summe der `sources` minus Summe
   der `subtract`).
+
+### Feste Grenzen für den Batterie-Sollwert
+
+Die offizielle Integration begrenzt den Sollwert „Batterieleistung“ auf die gerade
+verfügbare Lade- bzw. Entladeleistung (Register 10036 / 10038). Die Batterieheizung
+startet aber nur, wenn **mehr** Ladeleistung angefordert wird, als gerade möglich ist.
+Mit dieser Grenze heizt die Batterie bei Kälte also nie. Anker hat das in
+[Upstream-Issue #172](https://github.com/anker-charging/ha-anker-solix-official/issues/172)
+bestätigt und will die dynamische Grenze durch eine feste ersetzen; der Fork übernimmt
+das vorab.
+
+- Grenzen der Solarbank 4 E5000 Pro: **3600 W Laden**, **2500 W Entladen**, je nach
+  gewählter Richtung. Ohne gewählte Richtung gilt die größere Grenze. Höhere Werte
+  lehnt HA ab („outside valid range“).
+- Ein Ladewert über der verfügbaren Ladeleistung ist gewollt: Das Gerät lädt mit dem,
+  was möglich ist, und heizt bei Bedarf.
+- Die Attribute `max_charge_power` / `max_discharge_power` des Sollwerts zeigen weiter
+  die verfügbare Leistung, `max_power` die feste Grenze.
+- Beim **Richtungswechsel** schreibt die Integration den letzten Sollwert ohne neue
+  Prüfung mit dem neuen Vorzeichen (Upstream-Verhalten). Aus 3000 W Laden werden so
+  3000 W Entladen; das Gerät begrenzt die Entladung selbst.
+- Andere Geräte (Solarbank Max, Max AC, XE) behalten die Upstream-Logik.
+- Technik: Schlüssel `direction_max_values` am Sollwert in der Geräte-YAML,
+  ausgewertet von `setpoint_limits.py` (Hook in `number.py` → `native_max_value`).
+  Wenn Upstream seinen Fix veröffentlicht, beim Upstream-Sync prüfen, ob der Hook noch
+  nötig ist.
 
 ### SB4: geprüfte, nicht übernommene Register
 

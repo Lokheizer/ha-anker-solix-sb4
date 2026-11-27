@@ -570,6 +570,13 @@ control_items:
     direction_entity: "battery_power_direction"
     max_charge_power_entity: "max_charge_power"
     max_discharge_power_entity: "max_discharge_power"
+    # Fork: fixed upper limit per direction instead of the currently available
+    # power (the two entities above now only feed the attributes). Battery
+    # heating only starts when more charge power is requested than is
+    # available (upstream issue #172). SB4 E5000 Pro: 3600 W / 2500 W.
+    direction_max_values:
+      charge: 3600
+      discharge: 2500
     visibility_entity: "operating_mode"
     visibility_value: 3
     never_read_device: true  # NEVER read from device, only show user's input

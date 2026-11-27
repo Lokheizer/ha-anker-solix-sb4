@@ -111,8 +111,12 @@ class TestAvailablePowerSensors:
             assert sensors.get(translation_key, {}).get("name"), lang_file.name
 
 
-def test_setpoint_still_uses_available_power_limits() -> None:
-    """The number entity keeps reading its limits from the same data points."""
+def test_setpoint_attributes_still_use_available_power_sensors() -> None:
+    """The setpoint attributes keep reading the same data points.
+
+    The upper limit itself is fixed per direction (direction_max_values, see
+    test_setpoint_limits.py).
+    """
     data_points, _ = _load_sb4_config()
     setpoint = data_points["battery_power_setpoint"]
     assert setpoint["max_charge_power_entity"] == "max_charge_power"

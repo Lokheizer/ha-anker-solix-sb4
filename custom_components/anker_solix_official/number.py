@@ -20,6 +20,7 @@ from .base_entity import AnkerSolixBaseEntity, async_setup_entities_with_retry
 from .const import DOMAIN, WRITE_CONDITION_REVERT_DELAY
 from .coordinator import AnkerSolixOfficialCoordinator
 from .export_limit import create_export_limit_numbers
+from .setpoint_limits import fixed_direction_max
 
 # Signal for mutual exclusion updates
 SIGNAL_MUTUAL_EXCLUSION_UPDATE = f"{DOMAIN}_mutual_exclusion_update"
@@ -154,6 +155,9 @@ class ModbusLocalDeviceNumber(AnkerSolixBaseEntity, NumberEntity):
     @property
     def native_max_value(self) -> float:
         """Return dynamic max value based on current charge/discharge direction."""
+        # Fork: fixed charge/discharge limits, see setpoint_limits.py
+        if (fixed_max := fixed_direction_max(self._config, self.coordinator)) is not None:
+            return fixed_max
         if not self._max_charge_power_entity and not self._max_discharge_power_entity:
             return self._config_max_value
 

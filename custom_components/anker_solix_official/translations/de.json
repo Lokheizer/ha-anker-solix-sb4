@@ -122,6 +122,9 @@
       "ac_grid_output_power": {
         "name": "AC-Ausgang"
       },
+      "off_grid_power": {
+        "name": "Offgrid-Leistung"
+      },
       "grid_voltage": {
         "name": "Netzspannung"
       },

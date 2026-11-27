@@ -122,6 +122,9 @@
       "ac_grid_output_power": {
         "name": "Sortie CA"
       },
+      "off_grid_power": {
+        "name": "Puissance hors réseau"
+      },
       "grid_voltage": {
         "name": "Tension du réseau"
       },

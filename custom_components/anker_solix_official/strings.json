@@ -93,6 +93,9 @@
       "ac_grid_output_power": {
         "name": "AC Output"
       },
+      "off_grid_power": {
+        "name": "Off-grid Power"
+      },
       "grid_voltage": {
         "name": "Grid Voltage"
       },

@@ -271,7 +271,8 @@ def test_grid_voltage_and_current_have_their_own_batch_range() -> None:
 
 
 # Off-grid socket power: address from the HA-Anker-Solix-Extras integration,
-# still to be confirmed on the device. Signed, positive = output (assumed).
+# confirmed on the device against a Shelly at the socket. Positive = output.
+# Display only, the socket is already part of active_power (10006).
 OFF_GRID_POWER = ("off_grid_power", (10233, "INT32", "W", 1, 2))
 
 

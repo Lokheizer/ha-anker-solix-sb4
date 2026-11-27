@@ -5,8 +5,8 @@ shipped Solarbank 4 E5000 Pro configuration: MPPT input power PV1-3 is
 voltage x current (registers 10167-10172), PV4 has no registers on that
 device and is the remainder of the PCS PV power (register 10002). The
 heating power is the power balance of the device: PCS PV power + battery power
-(register 10008) - AC active power (register 10006) - off-grid socket power
-(register 10233).
+(register 10008) - AC active power (register 10006). The AC active power
+already includes the off-grid socket (register 10233, display only).
 """
 
 from __future__ import annotations
@@ -551,14 +551,13 @@ class TestShippedSb4Config:
         # The total is the PCS PV power register, not third-party PV.
         assert cfg["read_quantities"]["pv_power"]["address"] == 10002
 
-    def test_heating_power_is_pv_plus_battery_minus_ac_and_off_grid_power(
-        self,
-    ) -> None:
+    def test_heating_power_is_pv_plus_battery_minus_ac_active_power(self) -> None:
         cfg = _load_sb4_config()
         definition = get_derived_definitions(cfg)["heating_power"]
         assert definition["operation"] == "balance"
         assert definition["sources"] == ["pv_power", "battery_power"]
-        assert definition["subtract"] == ["active_power", "off_grid_power"]
+        # 10006 already includes the off-grid socket (verified on the device).
+        assert definition["subtract"] == ["active_power"]
         # PCS PV power only: third-party PV does not pass through the device.
         assert cfg["read_quantities"]["pv_power"]["address"] == 10002
 
@@ -760,8 +759,8 @@ def _int32(value: int, address: int) -> dict[int, int]:
 def _sb4_power_registers(
     pv: int, battery: int, active: int, off_grid: int = 0
 ) -> dict[int, int]:
-    """PCS PV power, battery power (+ discharging), AC active power (+ output)
-    and off-grid socket power (+ output)."""
+    """PCS PV power, battery power (+ discharging), AC active power (+ output,
+    including the off-grid socket) and off-grid socket power (+ output)."""
     return {
         **_int32(pv, 10002),
         **_int32(active, 10006),
@@ -830,35 +829,42 @@ class TestSb4HeatingPower:
 
     async def test_grid_charging_while_the_off_grid_socket_draws(self) -> None:
         # 1000 W from the grid + 500 W PV, 500 W out of the off-grid socket,
-        # 940 W into the battery: 60 W stay in the device.
+        # 940 W into the battery: 60 W stay in the device. The AC active power
+        # is the sum of both AC ports: -1000 W grid + 500 W socket = -500 W.
         registers = _sb4_power_registers(
-            pv=500, battery=-940, active=-1000, off_grid=500
+            pv=500, battery=-940, active=-500, off_grid=500
         )
         assert await self._heating_power(registers) == 60
 
-    async def test_off_grid_load_without_the_socket_term_would_count_as_heat(
-        self,
-    ) -> None:
-        # Same frame, but the off-grid term left out: the whole 500 W load
-        # would show up as heating power. Guards the reason for the term.
+    async def test_off_grid_power_does_not_change_the_heating_power(self) -> None:
+        frame = {"pv": 500, "battery": -940, "active": -500}
+        values = {
+            await self._heating_power(_sb4_power_registers(**frame, off_grid=off_grid))
+            for off_grid in (0, 500, 2000, -25)
+        }
+        assert values == {60}
+
+    async def test_subtracting_the_socket_again_would_count_it_twice(self) -> None:
+        # Guards the device finding: with an extra off_grid_power term the
+        # 500 W socket load is removed twice and the heating power drops to 0.
         data, _ = await _read_sb4_frame(
-            _sb4_power_registers(pv=500, battery=-940, active=-1000, off_grid=500)
+            _sb4_power_registers(pv=500, battery=-940, active=-500, off_grid=500)
         )
         definition = {
             **get_derived_definitions(_load_sb4_config())["heating_power"],
-            "subtract": ["active_power"],
+            "subtract": ["active_power", "off_grid_power"],
         }
-        assert compute_derived_values({"h": definition}, data)["h"] == 560
+        assert compute_derived_values({"h": definition}, data)["h"] == 0
 
     async def test_discharging_into_house_and_off_grid_socket(self) -> None:
-        # 1200 W from the battery, 700 W to the house, 450 W to the socket.
+        # 1200 W from the battery, 700 W to the house + 450 W to the socket.
         registers = _sb4_power_registers(
-            pv=0, battery=1200, active=700, off_grid=450
+            pv=0, battery=1200, active=1150, off_grid=450
         )
         assert await self._heating_power(registers) == 50
 
     async def test_pv_feeds_only_the_off_grid_socket(self) -> None:
-        registers = _sb4_power_registers(pv=640, battery=0, active=0, off_grid=600)
+        registers = _sb4_power_registers(pv=640, battery=0, active=600, off_grid=600)
         assert await self._heating_power(registers) == 40
 
     async def test_never_negative_when_registers_are_out_of_step(self) -> None:

@@ -179,6 +179,7 @@ read_quantities:
   # derived_quantities below. Both sit inside the 10000-10050 batch range.
   # active_power: positive = AC output, negative = charging from the grid
   # (ac_grid_output_power / 10208 reports the amount without direction).
+  # Includes the off-grid socket (device test November 2026).
   active_power:
     translation_key: "active_power"
     address: 10006
@@ -264,11 +265,11 @@ read_quantities:
     count: 2
     icon: "mdi:transmission-tower-export"
 
-  # Fork: active power of the off-grid socket. Address taken from the
-  # HA-Anker-Solix-Extras integration (marked experimental there), not yet
-  # confirmed on the device. Assumed: positive = output to the socket, and not
-  # part of active_power (10006). Signed on purpose, so a device test shows the
-  # real sign. Sits inside the 10208-10265 batch range. Feeds heating_power.
+  # Fork: active power of the off-grid socket, positive = output to the socket.
+  # Address taken from the HA-Anker-Solix-Extras integration, confirmed on the
+  # device (matches a Shelly at the socket, November 2026). Display only: the
+  # socket is already part of active_power (10006), so heating_power must not
+  # subtract it again. Sits inside the 10208-10265 batch range.
   off_grid_power:
     translation_key: "off_grid_power"
     address: 10233
@@ -698,8 +699,8 @@ derived_quantities:
   # Power that enters the device but does not leave it again (heating and
   # conversion losses): PCS PV power + battery power (discharging positive,
   # charging negative) - AC active power (output positive, grid charging
-  # negative) - off-grid socket power (output positive). Third-party PV (10004)
-  # does not pass through the device.
+  # negative; includes the off-grid socket, so off_grid_power is not subtracted
+  # separately). Third-party PV (10004) does not pass through the device.
   heating_power:
     translation_key: "heating_power"
     unit: "W"
@@ -712,7 +713,6 @@ derived_quantities:
       - "battery_power"
     subtract:
       - "active_power"
-      - "off_grid_power"
     min_value: 0
     precision: 0
 

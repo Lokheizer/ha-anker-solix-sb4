@@ -15,8 +15,8 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 | MPPT-Leistungen PV1–PV4 (SB4 E5000 Pro) | 1.0.0 | Vier Sensoren „PV1…PV4-Leistung“ in W. PV1–3 = Spannung × Strom (Register 10167–10172). PV4 hat auf der SB4 keine eigenen Register und wird berechnet: Solarleistung (Register 10002) − PV1 − PV2 − PV3. |
 | SB4: Exportbegrenzung | 1.0.0 | Auswahl „Exportbegrenzung“ (Unbegrenzt / Anpassen / Null-Export, wie in der Anker-App) und Zahlenwert „Exportlimit“ (100–10000 W) für die Solarbank 4 E5000 Pro, über die Register 10074 und 10075/10076. |
 | SB4: Netzspannung, Netzstrom, Netzfrequenz | 1.0.0 | Drei Sensoren für den Netzanschluss der Solarbank 4 E5000 Pro: „Netzspannung“ (Register 10199, V), „Netzstrom“ (Register 10205, A, vorzeichenbehaftet) und „Netzfrequenz“ (Register 10213, Hz). |
-| SB4: Sensor „Heizleistung“ | 1.1.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006) − Offgrid-Leistung (Register 10233). |
-| SB4: Sensor „Offgrid-Leistung“ | 1.1.0 | Wirkleistung der Offgrid-Steckdose der Solarbank 4 E5000 Pro in W (Register 10233/10234, vorzeichenbehaftet). Noch nicht am Gerät bestätigt, siehe Abschnitt „Heizleistung“. |
+| SB4: Sensor „Heizleistung“ | 1.1.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006, inkl. Offgrid-Steckdose). |
+| SB4: Sensor „Offgrid-Leistung“ | 1.1.0 | Wirkleistung der Offgrid-Steckdose der Solarbank 4 E5000 Pro in W (Register 10233/10234, positiv = Abgabe). Am Gerät mit einem Shelly an der Steckdose bestätigt. Reiner Anzeigesensor: Die Leistung ist bereits in der AC-Wirkleistung (Register 10006) enthalten. |
 
 ### Exportbegrenzung
 
@@ -59,27 +59,23 @@ V1.0.0 nahelegen. Register 10074 („Export Power Limitation Enable“) ist fakt
 
 ### Heizleistung
 
-`Heizleistung = Solarleistung (10002) + Batterieleistung (10008) − AC-Wirkleistung (10006)
-− Offgrid-Leistung (10233)`
+`Heizleistung = Solarleistung (10002) + Batterieleistung (10008) − AC-Wirkleistung (10006)`
 
 - Batterieleistung mit Vorzeichen: Entladen zählt als Quelle (positiv), Laden wird
   abgezogen (negativ).
 - AC-Wirkleistung mit Vorzeichen: Abgabe ins Haus wird abgezogen (positiv), Netzladung
   zählt als Quelle (negativ). Der Sensor „AC-Ausgang“ (Register 10208) eignet sich dafür
   nicht, er zeigt beim Netzladen einen positiven Wert.
-- Offgrid-Leistung (Sensor „Offgrid-Leistung“, Register 10233/10234, INT32): Last an der
-  Offgrid-Steckdose. Ohne diesen Abzug würde jede Last dort komplett als Heizleistung
-  gezählt (z.B. Netzladen 1000 W, PV 500 W, Offgrid 500 W → 560 W statt ca. 60 W).
-  **Noch nicht am Gerät bestätigt:** Die Adresse stammt aus der Integration
-  [HA-Anker-Solix-Extras](https://github.com/MattCheetham/HA-Anker-Solix-Extras), wo sie als
-  experimentell gilt. Angenommen ist „positiv = Abgabe“ und dass Register 10006 die
-  Offgrid-Steckdose nicht enthält. Prüfung mit einer bekannten Last an der Steckdose:
-  - „Offgrid-Leistung“ ≈ Last und positiv, Heizleistung bleibt klein → passt.
-  - „Offgrid-Leistung“ negativ → Vorzeichen in der Formel umdrehen.
-  - Heizleistung fällt unter der Last auf 0 → 10006 enthält die Offgrid-Leistung schon;
-    dann den Abzug entfernen.
+- Die AC-Wirkleistung (10006) **enthält die Offgrid-Steckdose** (Gerätetest November 2026:
+  mit einem zusätzlichen Abzug der Offgrid-Leistung fiel die Heizleistung unter Last um genau
+  diese Last). Eine Last an der Offgrid-Steckdose ist damit schon berücksichtigt und wird
+  nicht noch einmal abgezogen.
+- Der Sensor „Offgrid-Leistung“ (Register 10233/10234, INT32, positiv = Abgabe) zeigt den
+  Anteil der Offgrid-Steckdose an der AC-Wirkleistung. Die Adresse stammt aus der Integration
+  [HA-Anker-Solix-Extras](https://github.com/MattCheetham/HA-Anker-Solix-Extras) und stimmt am
+  Gerät mit einem Shelly an der Steckdose überein.
 - **Restwert**, kein Messwert: Er enthält neben der Heizung auch die Wandlungsverluste
-  und die Messtoleranzen der beteiligten Register.
+  und die Messtoleranzen der drei Register.
 - Die Register werden nicht exakt gleichzeitig gemessen; bei Lastsprüngen wäre der Wert
   kurz negativ. Er wird deshalb auf ganze Watt gerundet und nach unten auf 0 begrenzt.
 - Fremd-PV (Register 10004) fließt nicht durch das Gerät und ist nicht enthalten.
@@ -96,7 +92,7 @@ Solarbank 4 E5000 Pro geprüft (Gerätetest November 2026) und bewusst **nicht**
 
 | Register | Doku-Name | Befund am Gerät |
 |----------|-----------|-----------------|
-| 10006 | Active Power | Gleicher Betrag wie der vorhandene Sensor `ac_grid_output_power` (Register 10208), aber mit Vorzeichen: negativ beim Netzladen. Kein eigener Sensor; wird intern (`active_power`) für die Heizleistung verwendet. |
+| 10006 | Active Power | Gleicher Betrag wie der vorhandene Sensor `ac_grid_output_power` (Register 10208), aber mit Vorzeichen: negativ beim Netzladen. Enthält auch die Leistung der Offgrid-Steckdose. Kein eigener Sensor; wird intern (`active_power`) für die Heizleistung verwendet. |
 | 10022 / 10024 | Total Battery Charge / Discharge Energy | Identisch mit den vorhandenen Zählern aus 10262 / 10264. |
 | 10040 / 10041 | Number of PCS / Number of Available PCS | Liefern 257 (`0x0101`) und 4865 (`0x1301`), offenbar byteweise gepackte Werte unklarer Bedeutung. Passt nicht zur Doku; die SB4 ist dort nicht als unterstütztes Gerät gelistet. |
 

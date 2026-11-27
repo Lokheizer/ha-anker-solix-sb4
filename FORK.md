@@ -10,12 +10,12 @@ erstellt; neue Upstream-Versionen werden regelmäßig in den Fork übernommen.
 
 | Feature | Seit Version | Beschreibung |
 |---------|--------------|--------------|
-| SB4: Sensoren „Verfügbare Ladeleistung“ / „Verfügbare Entladeleistung“ | 0.2.0 | Die bereits gelesenen Register 10036 (Rechargeable Power) und 10038 (Dischargeable Power) stehen bei der Solarbank 4 E5000 Pro als Sensoren (`max_charge_power`, `max_discharge_power`) zur Verfügung. |
-| SB4: Sensoren „Kraftwerksstatus“ und „Batteriegesundheit“ (SOH) | 0.2.0 | Zusätzliche Datenpunkte der Anlagen-Übersicht für die Solarbank 4 E5000 Pro: Register 10000 (Plant Status, `power_station_status`) und 10015 (SOH, `battery_soh`). Dafür kann eine Geräte-Config mit `device_class: none` die aus der Einheit abgeleitete Geräteklasse entfernen. Die Register 10022 / 10024 (Total Battery Charge / Discharge Energy) liefern auf der SB4 dieselben Werte wie die vorhandenen Zähler aus 10262 / 10264 und werden deshalb nicht zusätzlich angeboten. |
-| MPPT-Leistungen PV1–PV4 (SB4 E5000 Pro) | 0.2.0 | Vier Sensoren „PV1…PV4-Leistung“ in W. PV1–3 = Spannung × Strom (Register 10167–10172). PV4 hat auf der SB4 keine eigenen Register und wird berechnet: Solarleistung (Register 10002) − PV1 − PV2 − PV3. |
-| SB4: Sensor „Heizleistung“ | 0.3.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006). |
-| SB4: Exportbegrenzung | 0.3.0 | Auswahl „Exportbegrenzung“ (Unbegrenzt / Anpassen / Null-Export, wie in der Anker-App) und Zahlenwert „Exportlimit“ (100–10000 W) für die Solarbank 4 E5000 Pro, über die Register 10074 und 10075/10076. |
-| SB4: Netzspannung, Netzstrom, Netzfrequenz | 0.3.0 | Drei Sensoren für den Netzanschluss der Solarbank 4 E5000 Pro: „Netzspannung“ (Register 10199, V), „Netzstrom“ (Register 10205, A, vorzeichenbehaftet) und „Netzfrequenz“ (Register 10213, Hz). |
+| SB4: Sensoren „Verfügbare Ladeleistung“ / „Verfügbare Entladeleistung“ | 1.0.0 | Die bereits gelesenen Register 10036 (Rechargeable Power) und 10038 (Dischargeable Power) stehen bei der Solarbank 4 E5000 Pro als Sensoren (`max_charge_power`, `max_discharge_power`) zur Verfügung. |
+| SB4: Sensoren „Kraftwerksstatus“ und „Batteriegesundheit“ (SOH) | 1.0.0 | Zusätzliche Datenpunkte der Anlagen-Übersicht für die Solarbank 4 E5000 Pro: Register 10000 (Plant Status, `power_station_status`) und 10015 (SOH, `battery_soh`). Dafür kann eine Geräte-Config mit `device_class: none` die aus der Einheit abgeleitete Geräteklasse entfernen. Die Register 10022 / 10024 (Total Battery Charge / Discharge Energy) liefern auf der SB4 dieselben Werte wie die vorhandenen Zähler aus 10262 / 10264 und werden deshalb nicht zusätzlich angeboten. |
+| MPPT-Leistungen PV1–PV4 (SB4 E5000 Pro) | 1.0.0 | Vier Sensoren „PV1…PV4-Leistung“ in W. PV1–3 = Spannung × Strom (Register 10167–10172). PV4 hat auf der SB4 keine eigenen Register und wird berechnet: Solarleistung (Register 10002) − PV1 − PV2 − PV3. |
+| SB4: Exportbegrenzung | 1.0.0 | Auswahl „Exportbegrenzung“ (Unbegrenzt / Anpassen / Null-Export, wie in der Anker-App) und Zahlenwert „Exportlimit“ (100–10000 W) für die Solarbank 4 E5000 Pro, über die Register 10074 und 10075/10076. |
+| SB4: Netzspannung, Netzstrom, Netzfrequenz | 1.0.0 | Drei Sensoren für den Netzanschluss der Solarbank 4 E5000 Pro: „Netzspannung“ (Register 10199, V), „Netzstrom“ (Register 10205, A, vorzeichenbehaftet) und „Netzfrequenz“ (Register 10213, Hz). |
+| SB4: Sensor „Heizleistung“ | 1.1.0 | Berechnete Leistung in W, die ins Gerät hinein-, aber nicht wieder herausfließt (Heizung und Wandlungsverluste): Solarleistung (Register 10002) + Batterieleistung (Register 10008) − AC-Wirkleistung (Register 10006). |
 
 ### Exportbegrenzung
 
@@ -142,7 +142,7 @@ ohne Release und ohne Marketplace.
    scripts/build_test_zip.sh
    ```
    Ergebnis: `dist/anker_solix_official-<version>-dev-<commit>.zip`. Die Version im
-   ZIP (z.B. `0.1.0-dev-1a2b3c4`) zeigt in HA, welcher Stand installiert ist;
+   ZIP (z.B. `1.0.0-dev-1a2b3c4`) zeigt in HA, welcher Stand installiert ist;
    `-dirty` bedeutet: enthält noch nicht committete Änderungen.
 2. In der Testinstanz den **Inhalt** von `/config/custom_components/anker_solix_official/`
    löschen (damit keine im Branch entfernten Dateien liegen bleiben), dann das ZIP nach
@@ -158,21 +158,20 @@ erneut herunterladen (überschreibt den Ordner) und neu starten.
 
 Der Fork hat ein eigenes, vom Upstream unabhängiges Versionsschema (SemVer):
 
-- **Minor** (`0.x.0`): neue Fork-Features oder Übernahme einer neuen Upstream-Version
-- **Patch** (`0.x.y`): Fehlerbehebungen
+- **Minor** (`1.x.0`): neue Fork-Features oder Übernahme einer neuen Upstream-Version
+- **Patch** (`1.x.y`): Fehlerbehebungen
 
 | Fork-Version | Upstream-Basis | Bemerkung |
 |--------------|----------------|-----------|
-| 0.1.0 | 1.5.1 | Initialer Fork |
-| 0.2.0 | 1.5.1 | SB4: Sensoren verfügbare Lade-/Entladeleistung, Kraftwerksstatus, Batteriegesundheit (SOH), MPPT-Leistungen PV1–PV4 |
+| 1.0.0 | 1.5.1 | Erstes Release: alle oben aufgeführten Fork-Features |
 
 ### Release erstellen
 
 1. `version` in `custom_components/anker_solix_official/manifest.json` anheben
    und obige Tabelle ergänzen.
 2. Commit auf `main` pushen.
-3. GitHub → Releases → *Draft a new release*, Tag `X.Y.Z` **ohne „v“** (z.B. `0.3.0`),
-   veröffentlichen. (`v0.1.0` und `v0.2.0` stammen noch aus dem alten Schema.)
+3. GitHub → Releases → *Draft a new release*, Tag `X.Y.Z` **ohne „v“** (z.B. `1.1.0`),
+   veröffentlichen.
 4. Der Workflow `release.yml` baut `anker_solix_official.zip` und hängt es an das
    Release an – HACS installiert dieses ZIP.
 

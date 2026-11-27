@@ -86,6 +86,9 @@
       "battery_soh": {
         "name": "Batteriegesundheit"
       },
+      "battery_temperature": {
+        "name": "Batterietemperatur"
+      },
       "pv_power": {
         "name": "Solarstrom"
       },

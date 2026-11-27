@@ -57,6 +57,9 @@
       "battery_soh": {
         "name": "Battery SOH"
       },
+      "battery_temperature": {
+        "name": "Battery Temperature"
+      },
       "pv_power": {
         "name": "Solar Power"
       },

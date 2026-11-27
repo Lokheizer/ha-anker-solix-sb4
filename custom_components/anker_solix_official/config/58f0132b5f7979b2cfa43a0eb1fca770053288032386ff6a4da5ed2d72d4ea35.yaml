@@ -408,6 +408,21 @@ read_quantities:
     icon: "mdi:battery-heart-variant"
     device_class: "none"
 
+  # Fork: battery temperature, signed, in tenths of a degree Celsius. Register
+  # definition taken from the HA-Anker-Solix-Extras integration. Sits inside
+  # the 10090-10156 batch range. The device only reports whole degrees (raw
+  # value in steps of 10, device test November 2026), so the display precision
+  # is 0 instead of the gain-derived 1.
+  battery_temperature:
+    translation_key: "battery_temperature"
+    address: 10156
+    data_type: "INT16"
+    unit: "°C"
+    gain: 10
+    count: 1
+    icon: "mdi:thermometer"
+    display_precision: 0
+
   ems_mode_mask:
     translation_key: "ems_mode_mask"
     address: 32774

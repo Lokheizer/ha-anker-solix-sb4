@@ -202,6 +202,7 @@ Der Fork hat ein eigenes, vom Upstream unabhängiges Versionsschema (SemVer):
 |--------------|----------------|-----------|
 | 1.0.0 | 1.5.1 | Erstes Release: alle Fork-Features mit „Seit Version“ 1.0.0 |
 | 1.1.0 | 1.5.1 | SB4: Sensoren „Heizleistung“ und „Offgrid-Leistung“ |
+| 1.2.0 | 1.5.1 | SB4: Sensor „Batterietemperatur“, feste Lade-/Entladegrenze für den Batterie-Sollwert |
 
 ### Release erstellen
 
